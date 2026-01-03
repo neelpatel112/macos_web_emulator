@@ -5,19 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>macOS Web by Neel Patel</title>
     <meta name="author" content="Neel Patel">
-    <meta name="copyright" content="© 2026 Neel Patel. All rights reserved.">
+    <meta name="copyright" content="© 2024 Neel Patel. All rights reserved.">
     
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Apple SF Pro Font -->
     <style>
         @import url('https://fonts.cdnfonts.com/css/sf-pro-display');
-        * { 
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif; }
     </style>
 </head>
 <body>
@@ -37,10 +33,9 @@
             <div class="unlock-hint">
                 <p>Click or press Enter to unlock</p>
                 <div class="password-field">
-                    <input type="password" placeholder="Enter password" id="lockPassword" value="macos">
+                    <input type="password" placeholder="Enter password" id="lockPassword">
                     <button id="unlockBtn"><i class="fas fa-arrow-right"></i></button>
                 </div>
-                <p class="hint-text">Hint: Password is "macos"</p>
             </div>
         </div>
     </div>
@@ -102,18 +97,6 @@
                 </div>
                 <span class="icon-label">Terminal</span>
             </div>
-            <div class="desktop-icon" data-app="snake">
-                <div class="icon-img">
-                    <i class="fas fa-gamepad"></i>
-                </div>
-                <span class="icon-label">Snake Game</span>
-            </div>
-            <div class="desktop-icon" data-app="pacman">
-                <div class="icon-img">
-                    <i class="fas fa-ghost"></i>
-                </div>
-                <span class="icon-label">Pac-Man</span>
-            </div>
             <div class="desktop-icon" data-app="preferences">
                 <div class="icon-img">
                     <i class="fas fa-sliders-h"></i>
@@ -134,14 +117,11 @@
                 <div class="dock-item" data-app="music">
                     <i class="fas fa-music"></i>
                 </div>
-                <div class="dock-item" data-app="snake">
-                    <i class="fas fa-gamepad"></i>
-                </div>
-                <div class="dock-item" data-app="pacman">
-                    <i class="fas fa-ghost"></i>
-                </div>
                 <div class="dock-item" data-app="terminal">
                     <i class="fas fa-terminal"></i>
+                </div>
+                <div class="dock-item" data-app="calculator">
+                    <i class="fas fa-calculator"></i>
                 </div>
                 <div class="dock-item" data-app="missioncontrol">
                     <i class="fas fa-th-large"></i>
@@ -162,13 +142,16 @@
 
     <!-- ========== MODALS & WINDOWS ========== -->
     
-    <!-- Context Menu -->
+    <!-- Right-click Context Menu -->
     <div id="contextMenu" class="context-menu">
         <div class="menu-item" data-action="new-folder"><i class="fas fa-folder-plus"></i> New Folder</div>
         <div class="menu-item" data-action="get-info"><i class="fas fa-info-circle"></i> Get Info</div>
         <div class="menu-divider"></div>
         <div class="menu-item" data-action="copy"><i class="fas fa-copy"></i> Copy</div>
         <div class="menu-item" data-action="paste"><i class="fas fa-paste"></i> Paste</div>
+        <div class="menu-item" data-action="duplicate"><i class="fas fa-clone"></i> Duplicate</div>
+        <div class="menu-divider"></div>
+        <div class="menu-item" data-action="move-to-trash"><i class="fas fa-trash"></i> Move to Trash</div>
     </div>
 
     <!-- Notification Center -->
@@ -177,14 +160,22 @@
             <h3>Notifications</h3>
             <button id="closeNotifications"><i class="fas fa-times"></i></button>
         </div>
-        <div class="notifications-list"></div>
+        <div class="notifications-list">
+            <div class="notification-item success">
+                <div class="notification-title">Welcome to macOS Web</div>
+                <div class="notification-message">Created by Neel Patel</div>
+                <div class="notification-time">Just now</div>
+            </div>
+        </div>
     </div>
 
     <!-- Mission Control -->
     <div id="missionControl" class="mission-control">
         <div class="mission-header">
             <h2>Mission Control</h2>
-            <button id="exitMission"><i class="fas fa-times"></i></button>
+            <div class="mission-controls">
+                <button id="exitMission"><i class="fas fa-times"></i></button>
+            </div>
         </div>
         <div class="desktops-container">
             <div class="desktop-space active" data-desktop="1">
@@ -228,18 +219,27 @@
     </div>
 
     <!-- Sound Test Modal -->
-    <div id="soundTestModal" class="modal">
+    <div id="soundTestModal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Test System Sounds</h3>
             <div class="sound-test-buttons">
                 <button class="sound-test-btn" data-sound="login">
-                    <i class="fas fa-power-off"></i> Login
+                    <i class="fas fa-power-off"></i> Login Sound
                 </button>
                 <button class="sound-test-btn" data-sound="click">
-                    <i class="fas fa-mouse-pointer"></i> Click
+                    <i class="fas fa-mouse-pointer"></i> Click Sound
                 </button>
-                <button class="sound-test-btn" data-sound="game">
-                    <i class="fas fa-gamepad"></i> Game
+                <button class="sound-test-btn" data-sound="notification">
+                    <i class="fas fa-bell"></i> Notification
+                </button>
+                <button class="sound-test-btn" data-sound="window">
+                    <i class="fas fa-window-restore"></i> Window Open
+                </button>
+                <button class="sound-test-btn" data-sound="error">
+                    <i class="fas fa-exclamation-triangle"></i> Error
+                </button>
+                <button class="sound-test-btn" data-sound="trash">
+                    <i class="fas fa-trash"></i> Empty Trash
                 </button>
             </div>
             <div class="modal-actions">
@@ -251,9 +251,7 @@
     <!-- Sound Player -->
     <audio id="soundPlayer" preload="auto"></audio>
 
-    <!-- ========== APP WINDOWS ========== -->
-    
-    <!-- Trash Window -->
+    <!-- Pre-built App Windows (Hidden by default) -->
     <div id="trashWindow" class="app-window" style="display: none;">
         <div class="window-titlebar">
             <div class="window-controls">
@@ -263,12 +261,21 @@
             </div>
             <div class="window-title">Trash</div>
         </div>
-        <div class="window-content">
-            <p style="text-align: center; padding: 50px; color: #86868b;">Trash is empty</p>
+        <div class="window-content finder-content">
+            <div class="finder-sidebar">
+                <div class="sidebar-section">
+                    <h4>Favorites</h4>
+                    <div class="sidebar-item active"><i class="fas fa-trash"></i> Trash</div>
+                </div>
+            </div>
+            <div class="finder-main">
+                <div class="finder-files" id="trashContents">
+                    <p class="empty-trash">Trash is empty</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- System Preferences -->
     <div id="preferencesWindow" class="app-window" style="display: none;">
         <div class="window-titlebar">
             <div class="window-controls">
@@ -283,18 +290,17 @@
                 <div class="sidebar-item active" data-pref="general">
                     <i class="fas fa-sliders-h"></i> General
                 </div>
+                <div class="sidebar-item" data-pref="desktop">
+                    <i class="fas fa-desktop"></i> Desktop & Dock
+                </div>
                 <div class="sidebar-item" data-pref="sound">
                     <i class="fas fa-volume-up"></i> Sound
-                </div>
-                <div class="sidebar-item" data-pref="games">
-                    <i class="fas fa-gamepad"></i> Games
                 </div>
             </div>
             <div class="preferences-main" id="preferencesPanel"></div>
         </div>
     </div>
 
-    <!-- Safari Browser -->
     <div id="safariWindow" class="app-window safari-window" style="display: none;">
         <div class="window-titlebar">
             <div class="window-controls">
@@ -310,20 +316,44 @@
                 </div>
                 <div class="url-bar">
                     <i class="fas fa-lock"></i>
-                    <input type="text" id="safariUrl" value="https://www.apple.com">
+                    <input type="text" id="safariUrl" value="https://www.apple.com" placeholder="Search or enter website name">
+                    <button class="share-btn"><i class="fas fa-share"></i></button>
                 </div>
             </div>
         </div>
         <div class="window-content safari-content">
-            <div class="webpage-preview">
-                <h2>Safari Browser</h2>
-                <p>Welcome to Safari in macOS Web by Neel Patel</p>
-                <p>Try the games - Snake and Pac-Man are available!</p>
+            <div class="safari-page active">
+                <div class="webpage-preview">
+                    <div class="webpage-header">
+                        <div class="favicon"></div>
+                        <div class="webpage-info">
+                            <div class="webpage-title">Apple</div>
+                            <div class="webpage-url">https://www.apple.com</div>
+                        </div>
+                    </div>
+                    <div class="webpage-content">
+                        <h2>Welcome to Safari</h2>
+                        <p>This is a simulated Safari browser within macOS Web by Neel Patel.</p>
+                        <div class="demo-content">
+                            <div class="content-grid">
+                                <div class="content-item">
+                                    <div class="item-img" style="background: #ff3b30;"></div>
+                                    <h4>iPhone 15 Pro</h4>
+                                    <p>Titanium. So strong. So light. So Pro.</p>
+                                </div>
+                                <div class="content-item">
+                                    <div class="item-img" style="background: #007aff;"></div>
+                                    <h4>MacBook Air</h4>
+                                    <p>Lean. Mean. M3 machine.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Music App -->
     <div id="musicWindow" class="app-window music-window" style="display: none;">
         <div class="window-titlebar">
             <div class="window-controls">
@@ -334,37 +364,47 @@
             <div class="window-title">Music</div>
         </div>
         <div class="window-content music-content">
-            <div class="music-grid">
-                <div class="music-card" data-song="1">
-                    <div class="album-art" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                        <i class="fas fa-play"></i>
-                    </div>
-                    <h4>macOS Theme</h4>
-                    <p>Neel Patel</p>
-                </div>
-                <div class="music-card" data-song="2">
-                    <div class="album-art" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
-                        <i class="fas fa-play"></i>
-                    </div>
-                    <h4>Game Soundtrack</h4>
-                    <p>Classic Arcade</p>
+            <div class="music-sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-item active"><i class="fas fa-music"></i> Listen Now</div>
+                    <div class="sidebar-item"><i class="fas fa-radio"></i> Radio</div>
                 </div>
             </div>
-            <div class="now-playing">
-                <div class="np-info">
-                    <h3>macOS Web Theme</h3>
-                    <p>Neel Patel · Original</p>
-                    <div class="player-controls">
-                        <button><i class="fas fa-step-backward"></i></button>
-                        <button class="play-btn"><i class="fas fa-play"></i></button>
-                        <button><i class="fas fa-step-forward"></i></button>
+            <div class="music-main">
+                <div class="music-grid">
+                    <div class="music-card" data-song="1">
+                        <div class="album-art" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <h4>Midnight City</h4>
+                        <p>M83</p>
+                    </div>
+                    <div class="music-card" data-song="2">
+                        <div class="album-art" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <h4>Blinding Lights</h4>
+                        <p>The Weeknd</p>
+                    </div>
+                </div>
+                <div class="now-playing">
+                    <div class="np-album">
+                        <div class="album-art-large" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                    </div>
+                    <div class="np-info">
+                        <h3>Midnight City</h3>
+                        <p>M83 · Hurry Up, We're Dreaming</p>
+                        <div class="player-controls">
+                            <button><i class="fas fa-step-backward"></i></button>
+                            <button class="play-btn"><i class="fas fa-play"></i></button>
+                            <button><i class="fas fa-step-forward"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Calculator -->
     <div id="calculatorWindow" class="app-window calculator-window" style="display: none;">
         <div class="window-titlebar">
             <div class="window-controls">
@@ -376,6 +416,7 @@
         </div>
         <div class="window-content calculator-content">
             <div class="calculator-display">
+                <div class="calc-history"></div>
                 <div class="calc-current">0</div>
             </div>
             <div class="calculator-buttons">
@@ -402,7 +443,6 @@
         </div>
     </div>
 
-    <!-- Terminal -->
     <div id="terminalWindow" class="app-window terminal-window" style="display: none;">
         <div class="window-titlebar">
             <div class="window-controls">
@@ -422,117 +462,6 @@
                     <span class="prompt">macOS-Web:~ neelpatel$</span>
                     <input type="text" id="terminalInput" autocomplete="off">
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Snake Game -->
-    <div id="snakeWindow" class="app-window snake-window" style="display: none;">
-        <div class="window-titlebar">
-            <div class="window-controls">
-                <div class="window-control close" data-window="snake"></div>
-                <div class="window-control minimize" data-window="snake"></div>
-                <div class="window-control expand" data-window="snake"></div>
-            </div>
-            <div class="window-title">Snake Game</div>
-        </div>
-        <div class="window-content game-content">
-            <div class="game-header">
-                <div class="game-stats">
-                    <div class="stat">
-                        <span class="stat-label">Score:</span>
-                        <span id="snakeScore">0</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">High Score:</span>
-                        <span id="snakeHighScore">0</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Speed:</span>
-                        <span id="snakeSpeed">Normal</span>
-                    </div>
-                </div>
-                <div class="game-controls">
-                    <button id="snakeStart" class="game-btn">▶ Start</button>
-                    <button id="snakePause" class="game-btn">⏸ Pause</button>
-                    <button id="snakeReset" class="game-btn">↻ Reset</button>
-                </div>
-            </div>
-            <div class="game-area">
-                <canvas id="snakeCanvas" width="600" height="400"></canvas>
-            </div>
-            <div class="game-instructions">
-                <h4>Controls:</h4>
-                <p>• Arrow Keys or WASD to move</p>
-                <p>• Eat the red food to grow</p>
-                <p>• Don't hit the walls or yourself</p>
-                <p>• Press Space to pause</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pac-Man Game -->
-    <div id="pacmanWindow" class="app-window pacman-window" style="display: none;">
-        <div class="window-titlebar">
-            <div class="window-controls">
-                <div class="window-control close" data-window="pacman"></div>
-                <div class="window-control minimize" data-window="pacman"></div>
-                <div class="window-control expand" data-window="pacman"></div>
-            </div>
-            <div class="window-title">Pac-Man</div>
-        </div>
-        <div class="window-content game-content">
-            <div class="game-header">
-                <div class="game-stats">
-                    <div class="stat">
-                        <span class="stat-label">Score:</span>
-                        <span id="pacmanScore">0</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Lives:</span>
-                        <span id="pacmanLives">3</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Level:</span>
-                        <span id="pacmanLevel">1</span>
-                    </div>
-                </div>
-                <div class="game-controls">
-                    <button id="pacmanStart" class="game-btn">▶ Start</button>
-                    <button id="pacmanPause" class="game-btn">⏸ Pause</button>
-                    <button id="pacmanReset" class="game-btn">↻ Reset</button>
-                </div>
-            </div>
-            <div class="game-area">
-                <canvas id="pacmanCanvas" width="600" height="400"></canvas>
-            </div>
-            <div class="game-instructions">
-                <h4>Controls:</h4>
-                <p>• Arrow Keys to move Pac-Man</p>
-                <p>• Eat all dots to advance</p>
-                <p>• Avoid ghosts (red circles)</p>
-                <p>• Power pellets make ghosts vulnerable</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Over Modal -->
-    <div id="gameOverModal" class="modal">
-        <div class="modal-content game-over-modal">
-            <h2 id="gameOverTitle">Game Over!</h2>
-            <div class="game-over-stats">
-                <div class="stat-final">
-                    <span>Final Score:</span>
-                    <span id="finalScore">0</span>
-                </div>
-                <div class="stat-final">
-                    <span>High Score:</span>
-                    <span id="finalHighScore">0</span>
-                </div>
-            </div>
-            <div class="game-over-actions">
-                <button id="playAgain" class="game-btn">Play Again</button>
-                <button id="backToMenu" class="game-btn">Back to Desktop</button>
             </div>
         </div>
     </div>
