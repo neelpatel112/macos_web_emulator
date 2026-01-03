@@ -37,6 +37,20 @@
                     <button id="unlockBtn"><i class="fas fa-arrow-right"></i></button>
                 </div>
             </div>
+            <!-- Restart & Shutdown Buttons -->
+            <div class="power-buttons">
+                <button id="restartBtn" class="power-btn">
+                    <i class="fas fa-redo"></i>
+                    <span>Restart</span>
+                </button>
+                <button id="shutdownBtn" class="power-btn">
+                    <i class="fas fa-power-off"></i>
+                    <span>Shut Down</span>
+                </button>
+            </div>
+            <div class="power-hint">
+                <p>Password: "macos" or leave empty</p>
+            </div>
         </div>
     </div>
 
@@ -245,6 +259,30 @@
             <div class="modal-actions">
                 <button id="closeSoundTest">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Shutdown Modal -->
+    <div id="shutdownModal" class="modal" style="display: none;">
+        <div class="modal-content shutdown-modal">
+            <div class="shutdown-icon">
+                <i class="fas fa-power-off"></i>
+            </div>
+            <h3>Shutting Down...</h3>
+            <p>Your computer will shut down in a moment.</p>
+            <div class="shutdown-progress"></div>
+        </div>
+    </div>
+
+    <!-- Restart Modal -->
+    <div id="restartModal" class="modal" style="display: none;">
+        <div class="modal-content restart-modal">
+            <div class="restart-icon">
+                <i class="fas fa-redo"></i>
+            </div>
+            <h3>Restarting...</h3>
+            <p>Your computer will restart in a moment.</p>
+            <div class="restart-progress"></div>
         </div>
     </div>
 
