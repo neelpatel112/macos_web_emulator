@@ -1,8 +1,4 @@
-macOS Web Emulator
-
-https://img.shields.io/badge/macOS-Web%20Emulator-blue
-https://img.shields.io/badge/Version-2.0-green
-https://img.shields.io/badge/License-MIT-yellow
+# macOS web emulator 
 
 🎯 Overview
 
