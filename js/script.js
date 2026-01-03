@@ -6,6 +6,8 @@ const lockDate = document.getElementById('lockDate');
 const desktopTime = document.getElementById('desktopTime');
 const lockPassword = document.getElementById('lockPassword');
 const unlockBtn = document.getElementById('unlockBtn');
+const restartBtn = document.getElementById('restartBtn');
+const shutdownBtn = document.getElementById('shutdownBtn');
 const desktopIcons = document.querySelectorAll('.desktop-icon');
 const dockItems = document.querySelectorAll('.dock-item');
 const contextMenu = document.getElementById('contextMenu');
@@ -16,6 +18,8 @@ const emptyTrashBtn = document.getElementById('emptyTrash');
 const restoreItemBtn = document.getElementById('restoreItem');
 const trashContents = document.getElementById('trashContents');
 const spotlightBtn = document.getElementById('spotlightBtn');
+const shutdownModal = document.getElementById('shutdownModal');
+const restartModal = document.getElementById('restartModal');
 
 // State Management
 let systemState = {
@@ -23,13 +27,17 @@ let systemState = {
     trashItems: [],
     openWindows: [],
     activeApp: null,
-    selectedFile: null
+    selectedFile: null,
+    isLocked: true,
+    isShuttingDown: false,
+    isRestarting: false
 };
 
 // Sound System State
 let soundState = {
     enabled: true,
     volume: 0.7,
+    audioContext: null,
     sounds: {
         login: { freq: 523.25, duration: 1000 },    // macOS startup sound
         click: { freq: 400, duration: 50 },         // Soft click
@@ -42,9 +50,19 @@ let soundState = {
         launchpad: { freq: 783.99, duration: 200 },    // Launchpad
         spotlight: { freq: 698.46, duration: 150 },    // Spotlight
         success: { freq: 523.25, duration: 300 },      // Success tone
-        minimize: { freq: 329.63, duration: 150 }      // Minimize
+        minimize: { freq: 329.63, duration: 150 },     // Minimize
+        shutdown: { freq: 174.61, duration: 800 },     // Shutdown sound
+        restart: { freq: 261.63, duration: 600 }       // Restart sound
     }
 };
+
+// Initialize audio context
+function initAudioContext() {
+    if (!soundState.audioContext) {
+        soundState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return soundState.audioContext;
+}
 
 // ========== TIME FUNCTIONS ==========
 function updateTime() {
@@ -70,7 +88,7 @@ function playSound(soundName) {
     if (!sound) return;
     
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioContext = initAudioContext();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -78,25 +96,48 @@ function playSound(soundName) {
         gainNode.connect(audioContext.destination);
         
         oscillator.frequency.value = sound.freq;
-        oscillator.type = soundName === 'login' ? 'sine' : 'triangle';
+        oscillator.type = ['login', 'shutdown', 'restart'].includes(soundName) ? 'sine' : 'triangle';
         
-        const volume = soundState.volume * (soundName === 'login' ? 0.3 : 0.2);
+        const volume = soundState.volume * (['login', 'shutdown', 'restart'].includes(soundName) ? 0.3 : 0.2);
         
-        // Smooth fade in/out for login sound
+        const now = audioContext.currentTime;
+        
         if (soundName === 'login') {
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.1);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + sound.duration/1000);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(volume, now + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
+        } else if (soundName === 'shutdown' || soundName === 'restart') {
+            gainNode.gain.setValueAtTime(volume, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
         } else {
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + sound.duration/1000);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
         }
         
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + sound.duration/1000);
+        oscillator.start(now);
+        oscillator.stop(now + sound.duration/1000);
     } catch (error) {
-        console.log('Audio:', error);
+        console.log('Audio context error:', error);
+        // Fallback to Web Audio API
+        try {
+            const audio = new Audio();
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = sound.freq;
+            oscillator.type = 'sine';
+            gainNode.gain.value = soundState.volume * 0.2;
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + sound.duration/1000);
+        } catch (fallbackError) {
+            console.log('Fallback audio also failed:', fallbackError);
+        }
     }
 }
 
@@ -115,7 +156,9 @@ function playSystemSound(event) {
         'launchpad': 'launchpad',
         'spotlight': 'spotlight',
         'success': 'success',
-        'minimize': 'minimize'
+        'minimize': 'minimize',
+        'shutdown': 'shutdown',
+        'restart': 'restart'
     };
     
     if (soundMap[event]) {
@@ -154,16 +197,103 @@ function toggleMute() {
 function showSoundTest() {
     const modal = document.getElementById('soundTestModal');
     modal.style.display = 'flex';
+    playSound('click');
 }
 
 function hideSoundTest() {
     document.getElementById('soundTestModal').style.display = 'none';
+    playSound('click');
+}
+
+// ========== POWER FUNCTIONS ==========
+function shutdownSystem() {
+    if (systemState.isShuttingDown || systemState.isRestarting) return;
+    
+    systemState.isShuttingDown = true;
+    playSystemSound('shutdown');
+    
+    shutdownModal.style.display = 'flex';
+    
+    const progressBar = shutdownModal.querySelector('.shutdown-progress');
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 2;
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                shutdownModal.style.display = 'none';
+                lockScreen.classList.add('active');
+                desktop.classList.remove('active');
+                systemState.isLocked = true;
+                lockPassword.value = '';
+                
+                // Close all windows
+                document.querySelectorAll('.app-window').forEach(window => {
+                    window.style.display = 'none';
+                });
+                systemState.openWindows = [];
+                updateDockIndicators();
+                
+                // Reset state after delay
+                setTimeout(() => {
+                    systemState.isShuttingDown = false;
+                    showNotification('System Shut Down', 'Computer has been shut down', 'info');
+                }, 1000);
+            }, 500);
+        }
+    }, 30);
+}
+
+function restartSystem() {
+    if (systemState.isShuttingDown || systemState.isRestarting) return;
+    
+    systemState.isRestarting = true;
+    playSystemSound('restart');
+    
+    restartModal.style.display = 'flex';
+    
+    const progressBar = restartModal.querySelector('.restart-progress');
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 2;
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                restartModal.style.display = 'none';
+                
+                // Close all windows
+                document.querySelectorAll('.app-window').forEach(window => {
+                    window.style.display = 'none';
+                });
+                systemState.openWindows = [];
+                updateDockIndicators();
+                
+                // Show lock screen
+                lockScreen.classList.add('active');
+                desktop.classList.remove('active');
+                systemState.isLocked = true;
+                lockPassword.value = '';
+                
+                // Reset state
+                setTimeout(() => {
+                    systemState.isRestarting = false;
+                    showNotification('System Restarted', 'Computer has been restarted', 'success');
+                }, 1000);
+            }, 500);
+        }
+    }, 30);
 }
 
 // ========== UNLOCK SYSTEM ==========
 function unlockMac() {
-    if(lockPassword.value === 'macos' || lockPassword.value === '') {
+    if(systemState.isLocked && (lockPassword.value === 'macos' || lockPassword.value === '')) {
+        systemState.isLocked = false;
         playSystemSound('login');
+        
         lockScreen.style.animation = 'fadeOut 0.5s ease forwards';
         
         setTimeout(() => {
@@ -171,15 +301,36 @@ function unlockMac() {
             desktop.classList.add('active');
             desktop.style.animation = 'slideUp 0.5s ease forwards';
             
-            showNotification('Welcome to macOS Web', 'Created by Neel Patel', 'success');
+            setTimeout(() => {
+                lockScreen.style.display = 'none';
+                desktop.style.display = 'block';
+                showNotification('Welcome to macOS Web', 'Created by Neel Patel', 'success');
+            }, 300);
         }, 300);
-    } else {
+    } else if (systemState.isLocked) {
         lockPassword.style.animation = 'shake 0.5s';
+        playSystemSound('error');
         setTimeout(() => {
             lockPassword.style.animation = '';
             lockPassword.value = '';
         }, 500);
     }
+}
+
+function lockMac() {
+    systemState.isLocked = true;
+    desktop.style.animation = 'fadeOut 0.5s ease forwards';
+    
+    setTimeout(() => {
+        desktop.classList.remove('active');
+        lockScreen.classList.add('active');
+        lockScreen.style.display = 'block';
+        lockScreen.style.animation = 'fadeIn 0.5s ease forwards';
+        
+        setTimeout(() => {
+            desktop.style.display = 'none';
+        }, 300);
+    }, 300);
 }
 
 // ========== NOTIFICATION SYSTEM ==========
@@ -275,6 +426,7 @@ function hideContextMenu() {
 }
 
 function handleContextMenuAction(action) {
+    playSystemSound('click');
     switch(action) {
         case 'new-folder':
             createNewFolder();
@@ -342,6 +494,7 @@ function moveToTrash() {
         trashDockItem.innerHTML = '<i class="fas fa-trash"></i>';
         
         updateTrashWindow();
+        playSystemSound('trash');
         showNotification('Move to Trash', `"${itemName}" moved to Trash`, 'info');
     }
 }
@@ -379,6 +532,8 @@ function updateTrashWindow() {
 
 // ========== APP WINDOW SYSTEM ==========
 function createAppWindow(appName) {
+    if (systemState.isLocked) return;
+    
     playSystemSound('window-open');
     
     // Check if window already exists
@@ -519,6 +674,7 @@ function makeWindowDraggable(windowElement) {
     document.addEventListener('mouseup', stopDrag);
     
     function startDrag(e) {
+        if (systemState.isLocked) return;
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
@@ -576,6 +732,7 @@ function setupWindowControls(windowElement) {
     });
     
     expandBtn.addEventListener('click', () => {
+        playSystemSound('click');
         if(windowElement.classList.contains('maximized')) {
             windowElement.classList.remove('maximized');
             windowElement.style.width = '400px';
@@ -603,6 +760,7 @@ function updateDockIndicators() {
 
 // ========== MISSION CONTROL ==========
 function showMissionControl() {
+    if (systemState.isLocked) return;
     playSystemSound('mission-control');
     const missionControl = document.getElementById('missionControl');
     missionControl.style.display = 'block';
@@ -616,6 +774,7 @@ function hideMissionControl() {
 
 // ========== LAUNCHPAD ==========
 function showLaunchpad() {
+    if (systemState.isLocked) return;
     playSystemSound('launchpad');
     const launchpad = document.getElementById('launchpad');
     launchpad.style.display = 'block';
@@ -661,6 +820,7 @@ function populateLaunchpad() {
 
 // ========== SPOTLIGHT SEARCH ==========
 function showSpotlight() {
+    if (systemState.isLocked) return;
     playSystemSound('spotlight');
     const spotlight = document.getElementById('spotlight');
     spotlight.style.display = 'block';
@@ -711,6 +871,7 @@ function openMusic() {
     const playBtn = document.querySelector('.play-btn');
     if (playBtn) {
         playBtn.addEventListener('click', function() {
+            playSystemSound('click');
             const isPlaying = this.classList.contains('playing');
             if (isPlaying) {
                 this.classList.remove('playing');
@@ -739,6 +900,7 @@ function playSong(songId) {
         playBtn.classList.add('playing');
         playBtn.innerHTML = '<i class="fas fa-pause"></i>';
         
+        playSystemSound('notification');
         showNotification('Music', `Now playing: ${song.title}`, 'success');
     }
 }
@@ -773,6 +935,7 @@ function setupCalculator() {
     }
 
     function appendNumber(number) {
+        playSystemSound('click');
         if (currentInput === '0' || resetScreen) {
             currentInput = number;
             resetScreen = false;
@@ -782,6 +945,7 @@ function setupCalculator() {
     }
 
     function chooseOperation(op) {
+        playSystemSound('click');
         if (currentInput === '') return;
         if (previousInput !== '') compute();
         operation = op;
@@ -790,6 +954,7 @@ function setupCalculator() {
     }
 
     function compute() {
+        playSystemSound('click');
         let computation;
         const prev = parseFloat(previousInput);
         const current = parseFloat(currentInput);
@@ -810,6 +975,7 @@ function setupCalculator() {
     }
 
     function clear() {
+        playSystemSound('click');
         currentInput = '0';
         previousInput = '';
         operation = null;
@@ -897,6 +1063,7 @@ function setupTerminal() {
     
     terminalInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
+            playSystemSound('click');
             const command = terminalInput.value.trim();
             if (command) {
                 addOutput(`macOS-Web:~ neelpatel$ ${command}`);
@@ -1040,6 +1207,15 @@ function setupPreferenceListeners() {
     if (testSoundsBtn) {
         testSoundsBtn.addEventListener('click', showSoundTest);
     }
+    
+    // Sidebar items
+    document.querySelectorAll('.preferences-sidebar .sidebar-item').forEach(item => {
+        item.addEventListener('click', function() {
+            playSystemSound('click');
+            const panelId = this.getAttribute('data-pref');
+            loadPreferencePanel(panelId);
+        });
+    });
 }
 
 // ========== UTILITY FUNCTIONS ==========
@@ -1054,9 +1230,14 @@ function showFileInfo() {
 function setupSoundEvents() {
     // Click sounds
     document.addEventListener('click', (e) => {
+        if (systemState.isLocked) return;
+        
         if (e.target.tagName === 'BUTTON' || 
+            e.target.closest('button') ||
             e.target.classList.contains('dock-item') ||
+            e.target.closest('.dock-item') ||
             e.target.classList.contains('desktop-icon') ||
+            e.target.closest('.desktop-icon') ||
             e.target.classList.contains('menu-item')) {
             playSystemSound('click');
         }
@@ -1068,6 +1249,8 @@ function setupHotCorners() {
     let cornerTimeout;
     
     document.addEventListener('mousemove', (e) => {
+        if (systemState.isLocked) return;
+        
         const x = e.clientX;
         const y = e.clientY;
         const width = window.innerWidth;
@@ -1109,6 +1292,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTime();
     setInterval(updateTime, 60000);
     
+    // Initialize audio context
+    initAudioContext();
+    
     // Load saved sound settings
     const savedVolume = localStorage.getItem('macosSoundVolume');
     const savedMute = localStorage.getItem('macosSoundMuted');
@@ -1118,6 +1304,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup sound system
     setupSoundEvents();
     
+    // Power buttons
+    restartBtn.addEventListener('click', restartSystem);
+    shutdownBtn.addEventListener('click', shutdownSystem);
+    
     // Unlock system
     unlockBtn.addEventListener('click', unlockMac);
     lockPassword.addEventListener('keypress', (e) => {
@@ -1126,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     lockScreen.addEventListener('click', (e) => {
         if(e.target === lockScreen || e.target.classList.contains('unlock-hint')) {
-            unlockMac();
+            lockPassword.focus();
         }
     });
     
@@ -1182,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', hideContextMenu);
     
     // Context menu actions
-    document.querySelectorAll('.menu-item[data-action]').forEach(item => {
+    document.querySelectorAll('#contextMenu .menu-item[data-action]').forEach(item => {
         item.addEventListener('click', (e) => {
             const action = e.target.getAttribute('data-action');
             handleContextMenuAction(action);
@@ -1192,11 +1382,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Notification center
     document.querySelector('.status-icons').addEventListener('click', (e) => {
         if(e.target.closest('.status-icons')) {
+            playSystemSound('click');
             notificationCenter.classList.toggle('active');
         }
     });
     
     closeNotifications.addEventListener('click', () => {
+        playSystemSound('click');
         notificationCenter.classList.remove('active');
     });
     
@@ -1264,6 +1456,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('soundTestModal').style.display === 'flex') {
                 hideSoundTest();
             }
+            if (document.getElementById('shutdownModal').style.display === 'flex') {
+                shutdownModal.style.display = 'none';
+                systemState.isShuttingDown = false;
+            }
+            if (document.getElementById('restartModal').style.display === 'flex') {
+                restartModal.style.display = 'none';
+                systemState.isRestarting = false;
+            }
+        }
+        
+        // Lock screen with Cmd/Ctrl + L
+        if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
+            e.preventDefault();
+            lockMac();
         }
     });
     
@@ -1279,11 +1485,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => hint.remove(), 5000);
     }, 2000);
     
-    // Auto-unlock for testing
+    // Auto-unlock for testing (optional)
     setTimeout(() => {
-        if (!desktop.classList.contains('active')) {
-            lockPassword.value = 'macos';
-            unlockMac();
+        if (systemState.isLocked) {
+            // lockPassword.value = 'macos';
+            // unlockMac();
         }
     }, 1000);
 });
