@@ -6,138 +6,36 @@ const lockDate = document.getElementById('lockDate');
 const desktopTime = document.getElementById('desktopTime');
 const lockPassword = document.getElementById('lockPassword');
 const unlockBtn = document.getElementById('unlockBtn');
-const desktopIcons = document.querySelectorAll('.desktop-icon');
-const dockItems = document.querySelectorAll('.dock-item');
-const contextMenu = document.getElementById('contextMenu');
-const notificationCenter = document.getElementById('notificationCenter');
-const closeNotifications = document.getElementById('closeNotifications');
-const trashWindow = document.getElementById('trashWindow');
-const spotlightBtn = document.getElementById('spotlightBtn');
 
-// Power buttons
-const lockRestartBtn = document.getElementById('lockRestartBtn');
-const lockShutdownBtn = document.getElementById('lockShutdownBtn');
-const sleepBtn = document.getElementById('sleepBtn');
-const desktopRestartBtn = document.getElementById('desktopRestartBtn');
-const desktopShutdownBtn = document.getElementById('desktopShutdownBtn');
-const desktopSleepBtn = document.getElementById('desktopSleepBtn');
+// State
+let isLocked = true;
+let currentWindows = [];
 
-// Modals
-const shutdownModal = document.getElementById('shutdownModal');
-const restartModal = document.getElementById('restartModal');
-const sleepModal = document.getElementById('sleepModal');
-const aboutMacModal = document.getElementById('aboutMacModal');
-const appStoreModal = document.getElementById('appStoreModal');
-
-// Music Player
-const musicPlayer = document.getElementById('musicPlayer');
-
-// State Management
-let systemState = {
-    notifications: [],
-    trashItems: [],
-    openWindows: [],
-    activeApp: null,
-    selectedFile: null,
-    isLocked: true,
-    isShuttingDown: false,
-    isRestarting: false,
-    isSleeping: false,
-    currentUser: 'Neel Patel',
-    volume: 0.7,
-    isDarkMode: false
-};
-
-// Music State
-let musicState = {
-    currentSong: null,
-    isPlaying: false,
-    currentTime: 0,
-    duration: 0,
-    volume: 0.8,
-    playlist: [
-        {
-            id: 1,
-            title: 'Blinding Lights',
-            artist: 'The Weeknd',
-            album: 'After Hours',
-            duration: 200,
-            color: '#f5576c',
-            icon: 'fas fa-fire'
-        },
-        {
-            id: 2,
-            title: 'Midnight City',
-            artist: 'M83',
-            album: 'Hurry Up, We\'re Dreaming',
-            duration: 244,
-            color: '#764ba2',
-            icon: 'fas fa-moon'
-        },
-        {
-            id: 3,
-            title: 'Levitating',
-            artist: 'Dua Lipa',
-            album: 'Future Nostalgia',
-            duration: 203,
-            color: '#f093fb',
-            icon: 'fas fa-star'
-        },
-        {
-            id: 4,
-            title: 'Stay',
-            artist: 'The Kid LAROI, Justin Bieber',
-            album: 'F*CK LOVE 3',
-            duration: 141,
-            color: '#4facfe',
-            icon: 'fas fa-heart'
-        },
-        {
-            id: 5,
-            title: 'Good 4 U',
-            artist: 'Olivia Rodrigo',
-            album: 'SOUR',
-            duration: 178,
-            color: '#f5576c',
-            icon: 'fas fa-guitar'
-        },
-        {
-            id: 6,
-            title: 'Heat Waves',
-            artist: 'Glass Animals',
-            album: 'Dreamland',
-            duration: 238,
-            color: '#667eea',
-            icon: 'fas fa-sun'
-        }
-    ],
-    currentPlaylistIndex: 0
-};
-
-// Sound System State
-let soundState = {
-    enabled: true,
-    volume: 0.7,
-    sounds: {
-        login: { freq: 523.25, duration: 1500, type: 'sine' },      // Classic Mac startup
-        click: { freq: 800, duration: 30, type: 'square' },        // Soft click
-        notification: { freq: 1046.50, duration: 200, type: 'sine' }, // Gentle bell
-        windowOpen: { freq: 659.25, duration: 150, type: 'sine' },   // Window open
-        windowClose: { freq: 392.00, duration: 150, type: 'sine' },  // Window close
-        error: { freq: 220, duration: 500, type: 'sawtooth' },       // Error tone
-        trash: { freq: 130.81, duration: 400, type: 'sawtooth' },    // Trash sound
-        mission: { freq: 880.00, duration: 200, type: 'sine' },      // Mission Control
-        launchpad: { freq: 1046.50, duration: 200, type: 'sine' },   // Launchpad
-        spotlight: { freq: 783.99, duration: 150, type: 'sine' },    // Spotlight
-        success: { freq: 1046.50, duration: 300, type: 'sine' },     // Success
-        minimize: { freq: 523.25, duration: 150, type: 'sine' },     // Minimize
-        shutdown: { freq: 174.61, duration: 1000, type: 'sine' },    // Shutdown
-        restart: { freq: 261.63, duration: 800, type: 'sine' },      // Restart
-        sleep: { freq: 329.63, duration: 600, type: 'sine' }         // Sleep
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('macOS Web Initialized');
+    
+    // Set initial time
+    updateTime();
+    setInterval(updateTime, 60000);
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Hide notification center initially
+    const notificationCenter = document.getElementById('notificationCenter');
+    if (notificationCenter) {
+        notificationCenter.classList.remove('active');
     }
-};
+    
+    // Setup dock items
+    setupDockItems();
+    
+    // Setup desktop icons
+    setupDesktopIcons();
+});
 
-// ========== TIME FUNCTIONS ==========
+// Update time function
 function updateTime() {
     const now = new Date();
     const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -148,911 +46,147 @@ function updateTime() {
         day: 'numeric' 
     });
     
-    lockTime.textContent = timeString;
-    desktopTime.textContent = timeString;
-    lockDate.textContent = dateString;
+    if (lockTime) lockTime.textContent = timeString;
+    if (desktopTime) desktopTime.textContent = timeString;
+    if (lockDate) lockDate.textContent = dateString;
 }
 
-// ========== SOUND SYSTEM ==========
-function playSound(soundName) {
-    if (!soundState.enabled) return;
+// Setup event listeners
+function setupEventListeners() {
+    console.log('Setting up event listeners...');
     
-    const sound = soundState.sounds[soundName];
-    if (!sound) return;
-    
-    try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = sound.freq;
-        oscillator.type = sound.type;
-        
-        const volume = soundState.volume * 0.3;
-        const now = audioContext.currentTime;
-        
-        // Different envelope for each sound
-        switch(soundName) {
-            case 'login':
-                // Classic Mac startup chime
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(volume, now + 0.1);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
-                break;
-            case 'click':
-                // Short, sharp click
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(volume * 0.5, now + 0.001);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
-                break;
-            case 'shutdown':
-                // Smooth fade out
-                gainNode.gain.setValueAtTime(volume, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
-                break;
-            default:
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + sound.duration/1000);
-        }
-        
-        oscillator.start(now);
-        oscillator.stop(now + sound.duration/1000);
-    } catch (error) {
-        console.log('Audio:', error);
-    }
-}
-
-function playSystemSound(event) {
-    if (!soundState.enabled) return;
-    
-    const soundMap = {
-        'login': 'login',
-        'click': 'click',
-        'notification': 'notification',
-        'window-open': 'windowOpen',
-        'window-close': 'windowClose',
-        'error': 'error',
-        'trash': 'trash',
-        'mission-control': 'mission',
-        'launchpad': 'launchpad',
-        'spotlight': 'spotlight',
-        'success': 'success',
-        'minimize': 'minimize',
-        'shutdown': 'shutdown',
-        'restart': 'restart',
-        'sleep': 'sleep'
-    };
-    
-    if (soundMap[event]) {
-        playSound(soundMap[event]);
-    }
-}
-
-function updateVolume(value) {
-    soundState.volume = value / 100;
-    localStorage.setItem('macosSoundVolume', value);
-    
-    const volumeValue = document.getElementById('volumeValue');
-    if (volumeValue) volumeValue.textContent = value + '%';
-    
-    if (Math.abs(value - 50) > 10) {
-        playSound('click');
-    }
-}
-
-function toggleMute() {
-    soundState.enabled = !soundState.enabled;
-    localStorage.setItem('macosSoundMuted', !soundState.enabled);
-    
-    const muteToggle = document.getElementById('muteToggle');
-    if (muteToggle) muteToggle.checked = soundState.enabled;
-    
-    if (soundState.enabled) playSound('notification');
-    
-    showNotification(
-        soundState.enabled ? 'Sound On' : 'Sound Muted',
-        `System sounds ${soundState.enabled ? 'enabled' : 'disabled'}`,
-        soundState.enabled ? 'success' : 'info'
-    );
-}
-
-function showSoundTest() {
-    const modal = document.getElementById('soundTestModal');
-    modal.style.display = 'flex';
-}
-
-function hideSoundTest() {
-    document.getElementById('soundTestModal').style.display = 'none';
-}
-
-// ========== POWER FUNCTIONS ==========
-function showShutdownModal() {
-    playSystemSound('click');
-    shutdownModal.style.display = 'flex';
-}
-
-function showRestartModal() {
-    playSystemSound('click');
-    restartModal.style.display = 'flex';
-}
-
-function showSleepModal() {
-    playSystemSound('click');
-    sleepModal.style.display = 'flex';
-}
-
-function shutdownSystem() {
-    if (systemState.isShuttingDown) return;
-    
-    systemState.isShuttingDown = true;
-    playSystemSound('shutdown');
-    
-    shutdownModal.style.display = 'none';
-    
-    // Create shutdown animation
-    const shutdownOverlay = document.createElement('div');
-    shutdownOverlay.className = 'shutdown-overlay';
-    shutdownOverlay.innerHTML = '<div class="shutdown-text">Shutting down...</div>';
-    document.body.appendChild(shutdownOverlay);
-    
-    setTimeout(() => {
-        shutdownOverlay.style.opacity = '0';
-        setTimeout(() => {
-            shutdownOverlay.remove();
-            
-            // Return to lock screen
-            lockScreen.classList.add('active');
-            desktop.classList.remove('active');
-            systemState.isLocked = true;
-            lockPassword.value = '';
-            
-            // Close all windows
-            document.querySelectorAll('.app-window').forEach(window => {
-                window.style.display = 'none';
-            });
-            systemState.openWindows = [];
-            updateDockIndicators();
-            
-            // Reset music
-            stopMusic();
-            
-            // Reset state
-            setTimeout(() => {
-                systemState.isShuttingDown = false;
-                showNotification('System Shut Down', 'Click screen to turn on', 'info');
-            }, 1000);
-        }, 500);
-    }, 2000);
-}
-
-function restartSystem() {
-    if (systemState.isRestarting) return;
-    
-    systemState.isRestarting = true;
-    playSystemSound('restart');
-    
-    restartModal.style.display = 'none';
-    
-    // Create restart animation
-    const restartOverlay = document.createElement('div');
-    restartOverlay.className = 'restart-overlay';
-    restartOverlay.innerHTML = '<div class="restart-text">Restarting...</div><div class="apple-logo"></div>';
-    document.body.appendChild(restartOverlay);
-    
-    setTimeout(() => {
-        restartOverlay.style.opacity = '0';
-        setTimeout(() => {
-            restartOverlay.remove();
-            
-            // Close all windows
-            document.querySelectorAll('.app-window').forEach(window => {
-                window.style.display = 'none';
-            });
-            systemState.openWindows = [];
-            updateDockIndicators();
-            
-            // Reset music
-            stopMusic();
-            
-            // Show lock screen with startup sound
-            lockScreen.classList.add('active');
-            desktop.classList.remove('active');
-            systemState.isLocked = true;
-            lockPassword.value = '';
-            
-            // Play startup sound after delay
-            setTimeout(() => {
-                playSystemSound('login');
-                setTimeout(() => {
-                    systemState.isRestarting = false;
-                    showNotification('System Restarted', 'Welcome back!', 'success');
-                }, 1000);
-            }, 500);
-        }, 500);
-    }, 2000);
-}
-
-function sleepSystem() {
-    if (systemState.isSleeping) return;
-    
-    systemState.isSleeping = true;
-    playSystemSound('sleep');
-    
-    sleepModal.style.display = 'none';
-    
-    // Create sleep animation
-    const sleepOverlay = document.createElement('div');
-    sleepOverlay.className = 'sleep-overlay';
-    document.body.appendChild(sleepOverlay);
-    
-    setTimeout(() => {
-        sleepOverlay.style.opacity = '0';
-        setTimeout(() => {
-            sleepOverlay.remove();
-            
-            // Dim the screen but keep it visible
-            desktop.style.opacity = '0.3';
-            desktop.style.filter = 'blur(5px)';
-            
-            // Set a wake up listener
-            document.addEventListener('click', wakeUpSystem);
-            
-            systemState.isSleeping = false;
-            showNotification('Entering Sleep', 'Click to wake up', 'info');
-        }, 500);
-    }, 1000);
-}
-
-function wakeUpSystem() {
-    if (!systemState.isSleeping && desktop.style.opacity === '0.3') {
-        desktop.style.opacity = '1';
-        desktop.style.filter = 'none';
-        playSound('click');
-        showNotification('Waking Up', 'Welcome back!', 'success');
-        document.removeEventListener('click', wakeUpSystem);
-    }
-}
-
-// ========== UNLOCK SYSTEM ==========
-function unlockMac() {
-    if(systemState.isLocked && (lockPassword.value === 'macos' || lockPassword.value === '')) {
-        systemState.isLocked = false;
-        
-        // Play classic Mac startup sound
-        playSystemSound('login');
-        
-        lockScreen.style.animation = 'fadeOut 0.5s ease forwards';
-        
-        setTimeout(() => {
-            lockScreen.classList.remove('active');
-            desktop.classList.add('active');
-            desktop.style.animation = 'slideUp 0.5s ease forwards';
-            
-            setTimeout(() => {
-                lockScreen.style.display = 'none';
-                desktop.style.display = 'block';
-                showNotification('Welcome to macOS Web', `Welcome back, ${systemState.currentUser}!`, 'success');
-                
-                // Auto open helpful hints
-                setTimeout(() => {
-                    showNotification('Tips', 'Try Cmd+Space for Spotlight, F3 for Mission Control', 'info');
-                }, 2000);
-            }, 300);
-        }, 300);
-    } else if (systemState.isLocked) {
-        lockPassword.style.animation = 'shake 0.5s';
-        playSystemSound('error');
-        setTimeout(() => {
-            lockPassword.style.animation = '';
-            lockPassword.value = '';
-        }, 500);
-    }
-}
-
-function lockMac() {
-    systemState.isLocked = true;
-    desktop.style.animation = 'fadeOut 0.5s ease forwards';
-    
-    setTimeout(() => {
-        desktop.classList.remove('active');
-        lockScreen.classList.add('active');
-        lockScreen.style.display = 'block';
-        lockScreen.style.animation = 'fadeIn 0.5s ease forwards';
-        
-        setTimeout(() => {
-            desktop.style.display = 'none';
-        }, 300);
-    }, 300);
-}
-
-// ========== NOTIFICATION SYSTEM ==========
-function showNotification(title, message, type = 'info') {
-    if (type === 'error') {
-        playSystemSound('error');
-    } else if (type === 'success') {
-        playSystemSound('success');
-    } else {
-        playSystemSound('notification');
+    // Unlock button
+    if (unlockBtn) {
+        unlockBtn.addEventListener('click', unlockMac);
     }
     
-    const notification = {
-        id: Date.now(),
-        title,
-        message,
-        type,
-        time: new Date()
-    };
-    
-    systemState.notifications.unshift(notification);
-    
-    const notificationEl = document.createElement('div');
-    notificationEl.className = `notification-item ${type}`;
-    notificationEl.innerHTML = `
-        <div class="notification-title">${title}</div>
-        <div class="notification-message">${message}</div>
-        <div class="notification-time">${notification.time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-    `;
-    
-    const notificationsList = document.querySelector('.notifications-list');
-    notificationsList.insertBefore(notificationEl, notificationsList.firstChild);
-    
-    // Show toast
-    showToastNotification(title, message, type);
-    
-    // Limit to 50 notifications
-    if(systemState.notifications.length > 50) {
-        systemState.notifications.pop();
-        const lastNotification = notificationsList.lastChild;
-        if(lastNotification) lastNotification.remove();
-    }
-}
-
-function showToastNotification(title, message, type) {
-    const toast = document.createElement('div');
-    toast.className = `notification-toast ${type}`;
-    toast.innerHTML = `
-        <div class="toast-icon">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.transform = 'translateX(0)';
-        toast.style.opacity = '1';
-    }, 10);
-    
-    setTimeout(() => {
-        toast.style.transform = 'translateX(100%)';
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
-}
-
-// ========== APP WINDOW SYSTEM ==========
-function createAppWindow(appName) {
-    if (systemState.isLocked) return;
-    
-    playSystemSound('window-open');
-    
-    // Check if window already exists
-    const existingWindow = document.querySelector(`.app-window[data-app="${appName}"]`);
-    if (existingWindow && !['finder', 'photos', 'messages'].includes(appName)) {
-        existingWindow.style.display = 'block';
-        existingWindow.style.zIndex = getHighestZIndex() + 1;
-        systemState.activeApp = appName;
-        updateDockIndicators();
-        return existingWindow;
-    }
-    
-    const windowId = 'window_' + Date.now();
-    let windowHTML = '';
-    
-    switch(appName) {
-        case 'finder':
-            windowHTML = createFinderWindow(windowId);
-            break;
-        case 'safari':
-            openSafari();
-            return;
-        case 'music':
-            openMusic();
-            return;
-        case 'calculator':
-            openCalculator();
-            return;
-        case 'terminal':
-            openTerminal();
-            return;
-        case 'preferences':
-            openPreferences();
-            return;
-        case 'photos':
-            openPhotos();
-            return;
-        case 'messages':
-            openMessages();
-            return;
-        default:
-            windowHTML = createDefaultWindow(windowId, appName);
-    }
-    
-    const container = document.getElementById('windowsContainer');
-    if (windowHTML) {
-        container.insertAdjacentHTML('beforeend', windowHTML);
-    }
-    
-    const newWindow = document.getElementById(windowId);
-    if (newWindow) {
-        systemState.openWindows.push(newWindow);
-        systemState.activeApp = appName;
-        
-        updateDockIndicators();
-        makeWindowDraggable(newWindow);
-        setupWindowControls(newWindow);
-        
-        const maxX = window.innerWidth - 400;
-        const maxY = window.innerHeight - 300;
-        newWindow.style.left = Math.max(50, Math.random() * maxX) + 'px';
-        newWindow.style.top = Math.max(50, Math.random() * maxY) + 'px';
-    }
-    
-    return newWindow;
-}
-
-// ========== MUSIC APP ==========
-function openMusic() {
-    const musicWindow = document.getElementById('musicWindow');
-    if (!musicWindow) return;
-    
-    musicWindow.style.display = 'block';
-    musicWindow.style.zIndex = getHighestZIndex() + 1;
-    makeWindowDraggable(musicWindow);
-    setupWindowControls(musicWindow);
-    systemState.activeApp = 'music';
-    updateDockIndicators();
-    
-    musicWindow.style.left = '150px';
-    musicWindow.style.top = '80px';
-    
-    // Setup music player
-    setupMusicPlayer();
-}
-
-function setupMusicPlayer() {
-    const musicGrid = document.getElementById('musicGrid');
-    if (!musicGrid) return;
-    
-    // Clear and populate music grid
-    musicGrid.innerHTML = '';
-    
-    musicState.playlist.forEach((song, index) => {
-        const musicCard = document.createElement('div');
-        musicCard.className = 'music-card';
-        musicCard.dataset.songId = song.id;
-        musicCard.innerHTML = `
-            <div class="music-card-art" style="background: linear-gradient(135deg, ${song.color}, ${adjustColor(song.color, -20)});">
-                <i class="${song.icon}"></i>
-                <div class="play-overlay"><i class="fas fa-play"></i></div>
-            </div>
-            <div class="music-card-info">
-                <h4>${song.title}</h4>
-                <p>${song.artist}</p>
-                <span class="song-duration">${formatTime(song.duration)}</span>
-            </div>
-        `;
-        
-        musicCard.addEventListener('click', () => {
-            playSong(song.id);
-        });
-        
-        musicGrid.appendChild(musicCard);
-    });
-    
-    // Setup player controls
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const musicVolume = document.getElementById('musicVolume');
-    const progressBar = document.getElementById('progressBar');
-    const progressFill = document.getElementById('progressFill');
-    
-    if (playPauseBtn) {
-        playPauseBtn.addEventListener('click', togglePlayPause);
-    }
-    
-    if (prevBtn) {
-        prevBtn.addEventListener('click', playPreviousSong);
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', playNextSong);
-    }
-    
-    if (musicVolume) {
-        musicVolume.addEventListener('input', (e) => {
-            musicPlayer.volume = e.target.value / 100;
-        });
-    }
-    
-    if (progressBar) {
-        progressBar.addEventListener('click', (e) => {
-            const rect = progressBar.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            if (musicState.currentSong) {
-                musicPlayer.currentTime = percent * musicPlayer.duration;
+    // Password enter key
+    if (lockPassword) {
+        lockPassword.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                unlockMac();
             }
         });
     }
     
-    // Update player state
-    musicPlayer.addEventListener('timeupdate', updateMusicProgress);
-    musicPlayer.addEventListener('loadedmetadata', updateMusicDuration);
-    musicPlayer.addEventListener('ended', playNextSong);
-}
-
-function playSong(songId) {
-    const song = musicState.playlist.find(s => s.id === songId);
-    if (!song) return;
+    // Power buttons on lock screen
+    const lockSleepBtn = document.getElementById('lockSleepBtn');
+    const lockRestartBtn = document.getElementById('lockRestartBtn');
+    const lockShutdownBtn = document.getElementById('lockShutdownBtn');
     
-    musicState.currentSong = song;
-    musicState.currentPlaylistIndex = musicState.playlist.findIndex(s => s.id === songId);
-    
-    // Update UI
-    document.getElementById('npTitle').textContent = song.title;
-    document.getElementById('npArtist').textContent = song.artist;
-    document.getElementById('npAlbumArt').innerHTML = `<i class="${song.icon}"></i>`;
-    document.getElementById('npAlbumArt').style.background = `linear-gradient(135deg, ${song.color}, ${adjustColor(song.color, -20)})`;
-    
-    // Play the song
-    musicPlayer.src = `https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3`; // Fallback URL
-    musicPlayer.volume = musicState.volume;
-    
-    musicPlayer.play()
-        .then(() => {
-            musicState.isPlaying = true;
-            updatePlayPauseButton();
-            showNotification('Now Playing', `${song.title} - ${song.artist}`, 'success');
-        })
-        .catch(error => {
-            console.log('Audio playback failed:', error);
-            // Simulate playback for demo
-            musicState.isPlaying = true;
-            updatePlayPauseButton();
-            showNotification('Now Playing', `${song.title} - ${song.artist}`, 'success');
-        });
-}
-
-function togglePlayPause() {
-    if (!musicState.currentSong) {
-        // If nothing is playing, play the first song
-        playSong(musicState.playlist[0].id);
-        return;
-    }
-    
-    if (musicState.isPlaying) {
-        musicPlayer.pause();
-        musicState.isPlaying = false;
-    } else {
-        musicPlayer.play()
-            .then(() => {
-                musicState.isPlaying = true;
-            })
-            .catch(() => {
-                // Simulate play for demo
-                musicState.isPlaying = true;
-            });
-    }
-    updatePlayPauseButton();
-}
-
-function stopMusic() {
-    musicPlayer.pause();
-    musicPlayer.currentTime = 0;
-    musicState.isPlaying = false;
-    musicState.currentSong = null;
-    updatePlayPauseButton();
-    
-    document.getElementById('npTitle').textContent = 'Not Playing';
-    document.getElementById('npArtist').textContent = '-';
-}
-
-function playNextSong() {
-    if (!musicState.currentSong) return;
-    
-    const nextIndex = (musicState.currentPlaylistIndex + 1) % musicState.playlist.length;
-    playSong(musicState.playlist[nextIndex].id);
-}
-
-function playPreviousSong() {
-    if (!musicState.currentSong) return;
-    
-    const prevIndex = musicState.currentPlaylistIndex > 0 ? 
-        musicState.currentPlaylistIndex - 1 : 
-        musicState.playlist.length - 1;
-    playSong(musicState.playlist[prevIndex].id);
-}
-
-function updatePlayPauseButton() {
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    if (playPauseBtn) {
-        playPauseBtn.innerHTML = `<i class="fas fa-${musicState.isPlaying ? 'pause' : 'play'}"></i>`;
-    }
-}
-
-function updateMusicProgress() {
-    const progressFill = document.getElementById('progressFill');
-    const currentTimeEl = document.getElementById('currentTime');
-    
-    if (progressFill && currentTimeEl && musicPlayer.duration) {
-        const percent = (musicPlayer.currentTime / musicPlayer.duration) * 100;
-        progressFill.style.width = percent + '%';
-        currentTimeEl.textContent = formatTime(musicPlayer.currentTime);
-    }
-}
-
-function updateMusicDuration() {
-    const totalTimeEl = document.getElementById('totalTime');
-    if (totalTimeEl && musicPlayer.duration) {
-        totalTimeEl.textContent = formatTime(musicPlayer.duration);
-    }
-}
-
-function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-}
-
-function adjustColor(color, amount) {
-    // Simple color adjustment
-    return color.replace(/\d+/g, num => Math.min(255, Math.max(0, parseInt(num) + amount)));
-}
-
-// ========== OTHER APPS ==========
-function openPhotos() {
-    const photosWindow = document.getElementById('photosWindow');
-    photosWindow.style.display = 'block';
-    photosWindow.style.zIndex = getHighestZIndex() + 1;
-    makeWindowDraggable(photosWindow);
-    setupWindowControls(photosWindow);
-    systemState.activeApp = 'photos';
-    updateDockIndicators();
-    
-    photosWindow.style.left = '200px';
-    photosWindow.style.top = '100px';
-    
-    // Populate photos
-    const photosGrid = document.getElementById('photosGrid');
-    if (photosGrid) {
-        photosGrid.innerHTML = '';
-        for (let i = 0; i < 12; i++) {
-            const photo = document.createElement('div');
-            photo.className = 'photo-item';
-            photo.style.background = getRandomColor();
-            photo.innerHTML = `<i class="fas fa-image"></i>`;
-            photosGrid.appendChild(photo);
-        }
-    }
-}
-
-function openMessages() {
-    const messagesWindow = document.getElementById('messagesWindow');
-    messagesWindow.style.display = 'block';
-    messagesWindow.style.zIndex = getHighestZIndex() + 1;
-    makeWindowDraggable(messagesWindow);
-    setupWindowControls(messagesWindow);
-    systemState.activeApp = 'messages';
-    updateDockIndicators();
-    
-    messagesWindow.style.left = '250px';
-    messagesWindow.style.top = '80px';
-    
-    // Setup messaging
-    const sendMessageBtn = document.getElementById('sendMessage');
-    const messageInput = document.getElementById('messageInput');
-    
-    if (sendMessageBtn && messageInput) {
-        sendMessageBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+    if (lockSleepBtn) {
+        lockSleepBtn.addEventListener('click', function() {
+            showSleep();
         });
     }
-}
-
-function sendMessage() {
-    const messageInput = document.getElementById('messageInput');
-    const chatMessages = document.getElementById('chatMessages');
     
-    if (messageInput.value.trim()) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message sent';
-        messageDiv.innerHTML = `
-            <div class="message-content">${messageInput.value}</div>
-            <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-        `;
-        chatMessages.appendChild(messageDiv);
-        messageInput.value = '';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Auto-reply after delay
-        setTimeout(() => {
-            const autoReply = document.createElement('div');
-            autoReply.className = 'message received';
-            autoReply.innerHTML = `
-                <div class="message-content">Thanks for your message! This is a simulated messaging system.</div>
-                <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-            `;
-            chatMessages.appendChild(autoReply);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1000);
-    }
-}
-
-// ========== EVENT LISTENERS ==========
-document.addEventListener('DOMContentLoaded', () => {
-    // Update time
-    updateTime();
-    setInterval(updateTime, 60000);
-    
-    // Load saved settings
-    const savedVolume = localStorage.getItem('macosSoundVolume');
-    const savedMute = localStorage.getItem('macosSoundMuted');
-    if (savedVolume !== null) soundState.volume = savedVolume / 100;
-    if (savedMute !== null) soundState.enabled = !(savedMute === 'true');
-    
-    // Power buttons
-    lockRestartBtn.addEventListener('click', showRestartModal);
-    lockShutdownBtn.addEventListener('click', showShutdownModal);
-    sleepBtn.addEventListener('click', showSleepModal);
-    desktopRestartBtn.addEventListener('click', showRestartModal);
-    desktopShutdownBtn.addEventListener('click', showShutdownModal);
-    desktopSleepBtn.addEventListener('click', showSleepModal);
-    
-    // Power modal actions
-    document.getElementById('confirmShutdown').addEventListener('click', shutdownSystem);
-    document.getElementById('confirmRestart').addEventListener('click', restartSystem);
-    document.getElementById('confirmSleep').addEventListener('click', sleepSystem);
-    
-    // Cancel buttons
-    document.querySelectorAll('.power-cancel').forEach(btn => {
-        btn.addEventListener('click', () => {
-            playSystemSound('click');
-            shutdownModal.style.display = 'none';
-            restartModal.style.display = 'none';
-            sleepModal.style.display = 'none';
+    if (lockRestartBtn) {
+        lockRestartBtn.addEventListener('click', function() {
+            showRestartModal();
         });
-    });
+    }
     
-    // Apple menu
-    const appleMenu = document.querySelector('.apple-menu');
-    const appleMenuDropdown = document.querySelector('.apple-menu-dropdown');
+    if (lockShutdownBtn) {
+        lockShutdownBtn.addEventListener('click', function() {
+            showShutdownModal();
+        });
+    }
     
-    appleMenu.addEventListener('click', () => {
-        playSystemSound('click');
-        appleMenuDropdown.classList.toggle('show');
-    });
-    
-    // Apple menu items
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const action = this.dataset.action;
-            appleMenuDropdown.classList.remove('show');
-            
-            switch(action) {
-                case 'about':
-                    showAboutMac();
-                    break;
-                case 'preferences':
-                    createAppWindow('preferences');
-                    break;
-                case 'app-store':
-                    showAppStore();
-                    break;
-                case 'sleep':
-                    showSleepModal();
-                    break;
-                case 'restart':
-                    showRestartModal();
-                    break;
-                case 'shutdown':
-                    showShutdownModal();
-                    break;
-                case 'lock':
-                    lockMac();
-                    break;
-                case 'force-quit':
-                    showNotification('Force Quit', 'Press Option+Command+Esc to force quit apps', 'info');
-                    break;
+    // Close notification center
+    const closeNotifications = document.getElementById('closeNotifications');
+    if (closeNotifications) {
+        closeNotifications.addEventListener('click', function() {
+            const notificationCenter = document.getElementById('notificationCenter');
+            if (notificationCenter) {
+                notificationCenter.classList.remove('active');
             }
         });
-    });
-    
-    // Close dropdown when clicking elsewhere
-    document.addEventListener('click', (e) => {
-        if (!appleMenu.contains(e.target)) {
-            appleMenuDropdown.classList.remove('show');
-        }
-    });
-    
-    // Unlock system
-    unlockBtn.addEventListener('click', unlockMac);
-    lockPassword.addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') unlockMac();
-    });
-    
-    // Desktop icons
-    desktopIcons.forEach(icon => {
-        icon.addEventListener('dblclick', () => {
-            const appName = icon.getAttribute('data-app');
-            createAppWindow(appName);
-        });
-    });
-    
-    // Dock items
-    dockItems.forEach(item => {
-        const appName = item.getAttribute('data-app');
-        
-        if(appName === 'trash') {
-            item.addEventListener('click', () => {
-                if(trashWindow.style.display === 'none') {
-                    createAppWindow('finder');
-                } else {
-                    trashWindow.style.display = 'none';
-                }
-            });
-        } else if (appName === 'missioncontrol') {
-            item.addEventListener('click', () => {
-                showMissionControl();
-            });
-        } else if (appName === 'launchpad') {
-            item.addEventListener('click', () => {
-                showLaunchpad();
-            });
-        } else {
-            item.addEventListener('click', () => {
-                createAppWindow(appName);
-            });
-        }
-    });
-    
-    // Notification button
-    document.getElementById('notificationBtn').addEventListener('click', () => {
-        playSystemSound('notification');
-        notificationCenter.classList.toggle('active');
-    });
-    
-    closeNotifications.addEventListener('click', () => {
-        playSystemSound('click');
-        notificationCenter.classList.remove('active');
-    });
+    }
     
     // Spotlight button
+    const spotlightBtn = document.getElementById('spotlightBtn');
     if (spotlightBtn) {
         spotlightBtn.addEventListener('click', showSpotlight);
     }
     
-    // User menu button
-    document.getElementById('userMenuBtn').addEventListener('click', () => {
-        playSystemSound('click');
-        showNotification('User Menu', 'Click Apple menu for more options', 'info');
+    // Close spotlight
+    const closeSpotlight = document.getElementById('closeSpotlight');
+    if (closeSpotlight) {
+        closeSpotlight.addEventListener('click', hideSpotlight);
+    }
+    
+    // Mission Control exit
+    const exitMission = document.getElementById('exitMission');
+    if (exitMission) {
+        exitMission.addEventListener('click', hideMissionControl);
+    }
+    
+    // Launchpad exit
+    const exitLaunchpad = document.getElementById('exitLaunchpad');
+    if (exitLaunchpad) {
+        exitLaunchpad.addEventListener('click', hideLaunchpad);
+    }
+    
+    // Power modal actions
+    const confirmShutdown = document.getElementById('confirmShutdown');
+    if (confirmShutdown) {
+        confirmShutdown.addEventListener('click', shutdownSystem);
+    }
+    
+    const confirmRestart = document.getElementById('confirmRestart');
+    if (confirmRestart) {
+        confirmRestart.addEventListener('click', restartSystem);
+    }
+    
+    // Cancel buttons for modals
+    document.querySelectorAll('.power-cancel').forEach(btn => {
+        btn.addEventListener('click', function() {
+            hideAllModals();
+        });
     });
     
-    // Keyboard shortcuts
+    // Close sound test
+    const closeSoundTest = document.getElementById('closeSoundTest');
+    if (closeSoundTest) {
+        closeSoundTest.addEventListener('click', hideSoundTest);
+    }
+    
+    // Sound test buttons
+    document.querySelectorAll('.sound-test-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const sound = this.getAttribute('data-sound');
+            playSound(sound);
+        });
+    });
+    
+    // Click outside modals to close
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    });
+    
+    // Setup keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         // Cmd/Ctrl + Space for Spotlight
         if ((e.metaKey || e.ctrlKey) && e.key === ' ') {
             e.preventDefault();
             showSpotlight();
+        }
+        
+        // Escape to close things
+        if (e.key === 'Escape') {
+            hideSpotlight();
+            hideMissionControl();
+            hideLaunchpad();
+            hideAllModals();
+            
+            const notificationCenter = document.getElementById('notificationCenter');
+            if (notificationCenter && notificationCenter.classList.contains('active')) {
+                notificationCenter.classList.remove('active');
+            }
         }
         
         // F3 for Mission Control
@@ -1066,97 +200,131 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             showLaunchpad();
         }
-        
-        // Cmd/Ctrl + Q to quit
-        if ((e.metaKey || e.ctrlKey) && e.key === 'q') {
-            e.preventDefault();
-            showNotification('Quit Application', 'Use Cmd+Q to quit apps', 'info');
-        }
-        
-        // Cmd/Ctrl + W to close window
-        if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
-            e.preventDefault();
-            if (systemState.activeApp) {
-                const window = document.querySelector(`.app-window[data-app="${systemState.activeApp}"]`);
-                if (window) {
-                    const closeBtn = window.querySelector('.window-control.close');
-                    if (closeBtn) closeBtn.click();
-                }
-            }
-        }
-        
-        // Escape to close modals
-        if (e.key === 'Escape') {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (modal.style.display === 'flex') {
-                    modal.style.display = 'none';
-                }
-            });
-            notificationCenter.classList.remove('active');
-            document.querySelector('.apple-menu-dropdown').classList.remove('show');
-        }
-        
-        // Cmd/Ctrl + L to lock
-        if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
-            e.preventDefault();
-            lockMac();
-        }
-        
-        // Media keys
-        if (e.key === ' ') {
-            // Space to play/pause music
-            if (musicState.currentSong) {
-                e.preventDefault();
-                togglePlayPause();
-            }
-        }
     });
-    
-    // Auto-add some photos for demo
-    setTimeout(() => {
-        showNotification('System Ready', 'macOS Web is fully loaded and ready!', 'success');
-    }, 1000);
-});
-
-// ========== HELPER FUNCTIONS ==========
-function getHighestZIndex() {
-    const windows = document.querySelectorAll('.app-window');
-    let highest = 100;
-    windows.forEach(window => {
-        const zIndex = parseInt(window.style.zIndex || 100);
-        if (zIndex > highest) highest = zIndex;
-    });
-    return highest;
 }
 
+// Setup desktop icons
+function setupDesktopIcons() {
+    console.log('Setting up desktop icons...');
+    const desktopIcons = document.querySelectorAll('.desktop-icon');
+    
+    desktopIcons.forEach(icon => {
+        // Remove any existing listeners
+        const newIcon = icon.cloneNode(true);
+        icon.parentNode.replaceChild(newIcon, icon);
+        
+        // Add new listener
+        newIcon.addEventListener('dblclick', function() {
+            console.log('Desktop icon clicked:', this.dataset.app);
+            const appName = this.getAttribute('data-app');
+            openApp(appName);
+        });
+        
+        // Add click sound
+        newIcon.addEventListener('click', function() {
+            playSound('click');
+        });
+    });
+    
+    console.log('Desktop icons setup complete. Found:', desktopIcons.length);
+}
+
+// Setup dock items
+function setupDockItems() {
+    console.log('Setting up dock items...');
+    const dockItems = document.querySelectorAll('.dock-item');
+    
+    dockItems.forEach(item => {
+        // Remove any existing listeners
+        const newItem = item.cloneNode(true);
+        item.parentNode.replaceChild(newItem, item);
+        
+        // Add new listener
+        newItem.addEventListener('click', function() {
+            console.log('Dock item clicked:', this.dataset.app);
+            const appName = this.getAttribute('data-app');
+            
+            if (appName === 'missioncontrol') {
+                showMissionControl();
+            } else if (appName === 'launchpad') {
+                showLaunchpad();
+            } else if (appName === 'trash') {
+                // Open trash/finder
+                openApp('finder');
+            } else {
+                openApp(appName);
+            }
+            
+            playSound('click');
+        });
+    });
+    
+    console.log('Dock items setup complete. Found:', dockItems.length);
+}
+
+// Open app function
+function openApp(appName) {
+    console.log('Opening app:', appName);
+    
+    if (isLocked) {
+        console.log('Cannot open app - system is locked');
+        return;
+    }
+    
+    playSound('window');
+    
+    // Get the window element
+    const windowElement = document.getElementById(appName + 'Window');
+    
+    if (windowElement) {
+        console.log('Found window element, showing it...');
+        // Show the window
+        windowElement.style.display = 'block';
+        
+        // Make it draggable
+        makeWindowDraggable(windowElement);
+        
+        // Setup window controls
+        setupWindowControls(windowElement);
+        
+        // Add to current windows
+        if (!currentWindows.includes(appName)) {
+            currentWindows.push(appName);
+        }
+        
+        // Update dock indicator
+        updateDockIndicator(appName, true);
+        
+        // Position window
+        positionWindow(windowElement);
+    } else {
+        console.error('Window element not found for app:', appName);
+    }
+}
+
+// Make window draggable
 function makeWindowDraggable(windowElement) {
     const titlebar = windowElement.querySelector('.window-titlebar');
     let isDragging = false;
-    let startX, startY, startLeft, startTop;
+    let offsetX, offsetY;
     
     titlebar.addEventListener('mousedown', startDrag);
     document.addEventListener('mousemove', drag);
     document.addEventListener('mouseup', stopDrag);
     
     function startDrag(e) {
-        if (systemState.isLocked) return;
         isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        startLeft = windowElement.offsetLeft;
-        startTop = windowElement.offsetTop;
-        
-        windowElement.style.zIndex = getHighestZIndex() + 1;
+        offsetX = e.clientX - windowElement.offsetLeft;
+        offsetY = e.clientY - windowElement.offsetTop;
+        windowElement.style.zIndex = 1000;
         e.preventDefault();
     }
     
     function drag(e) {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        windowElement.style.left = (startLeft + dx) + 'px';
-        windowElement.style.top = (startTop + dy) + 'px';
+        if (isDragging) {
+            windowElement.style.left = (e.clientX - offsetX) + 'px';
+            windowElement.style.top = (e.clientY - offsetY) + 'px';
+        }
     }
     
     function stopDrag() {
@@ -1164,538 +332,691 @@ function makeWindowDraggable(windowElement) {
     }
 }
 
+// Setup window controls
 function setupWindowControls(windowElement) {
     const closeBtn = windowElement.querySelector('.window-control.close');
     const minimizeBtn = windowElement.querySelector('.window-control.minimize');
     const expandBtn = windowElement.querySelector('.window-control.expand');
     
-    closeBtn.addEventListener('click', () => {
-        playSystemSound('window-close');
-        windowElement.style.animation = 'fadeOut 0.3s ease forwards';
-        setTimeout(() => {
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            playSound('window');
             windowElement.style.display = 'none';
-            systemState.openWindows = systemState.openWindows.filter(w => w !== windowElement);
-            updateDockIndicators();
-        }, 300);
-    });
+            
+            // Remove from current windows
+            const appName = windowElement.id.replace('Window', '');
+            const index = currentWindows.indexOf(appName);
+            if (index > -1) {
+                currentWindows.splice(index, 1);
+            }
+            
+            // Update dock indicator
+            updateDockIndicator(appName, false);
+        });
+    }
     
-    minimizeBtn.addEventListener('click', () => {
-        playSystemSound('minimize');
-        windowElement.style.animation = 'minimizeToDock 0.3s ease forwards';
-        setTimeout(() => {
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', function() {
+            playSound('minimize');
             windowElement.style.display = 'none';
-        }, 300);
-    });
+        });
+    }
     
-    expandBtn.addEventListener('click', () => {
-        playSystemSound('click');
-        if(windowElement.classList.contains('maximized')) {
-            windowElement.classList.remove('maximized');
-            windowElement.style.width = '';
-            windowElement.style.height = '';
-            windowElement.style.left = '';
-            windowElement.style.top = '';
+    if (expandBtn) {
+        expandBtn.addEventListener('click', function() {
+            playSound('click');
+            if (windowElement.classList.contains('maximized')) {
+                windowElement.classList.remove('maximized');
+                windowElement.style.width = '400px';
+                windowElement.style.height = '300px';
+            } else {
+                windowElement.classList.add('maximized');
+                windowElement.style.width = '80%';
+                windowElement.style.height = '80%';
+                windowElement.style.left = '10%';
+                windowElement.style.top = '10%';
+            }
+        });
+    }
+}
+
+// Position window
+function positionWindow(windowElement) {
+    const windowsOpen = currentWindows.length;
+    windowElement.style.left = (100 + (windowsOpen * 20)) + 'px';
+    windowElement.style.top = (100 + (windowsOpen * 20)) + 'px';
+}
+
+// Update dock indicator
+function updateDockIndicator(appName, isRunning) {
+    const dockItem = document.querySelector(`.dock-item[data-app="${appName}"]`);
+    if (dockItem) {
+        if (isRunning) {
+            dockItem.classList.add('running');
         } else {
-            windowElement.classList.add('maximized');
-            windowElement.style.width = 'calc(100% - 40px)';
-            windowElement.style.height = 'calc(100% - 80px)';
-            windowElement.style.left = '20px';
-            windowElement.style.top = '60px';
+            dockItem.classList.remove('running');
+        }
+    }
+}
+
+// Unlock macOS
+function unlockMac() {
+    console.log('Unlock attempt...');
+    
+    const password = lockPassword ? lockPassword.value : '';
+    
+    if (password === 'macos' || password === '') {
+        console.log('Unlock successful');
+        playSound('login');
+        
+        // Hide lock screen
+        lockScreen.classList.remove('active');
+        lockScreen.style.display = 'none';
+        
+        // Show desktop
+        desktop.classList.add('active');
+        desktop.style.display = 'block';
+        
+        isLocked = false;
+        
+        // Show welcome notification (but not immediately)
+        setTimeout(() => {
+            showNotification('Welcome to macOS Web', 'Created by Neel Patel');
+        }, 1000);
+        
+        // Clear password field
+        if (lockPassword) {
+            lockPassword.value = '';
+        }
+    } else {
+        console.log('Unlock failed');
+        playSound('error');
+        if (lockPassword) {
+            lockPassword.style.animation = 'shake 0.5s';
+            setTimeout(() => {
+                lockPassword.style.animation = '';
+                lockPassword.value = '';
+            }, 500);
+        }
+    }
+}
+
+// Show notification
+function showNotification(title, message) {
+    console.log('Showing notification:', title);
+    
+    const notificationCenter = document.getElementById('notificationCenter');
+    const notificationsList = document.querySelector('.notifications-list');
+    
+    if (!notificationCenter || !notificationsList) {
+        console.error('Notification elements not found');
+        return;
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification-item';
+    notification.innerHTML = `
+        <div class="notification-title">${title}</div>
+        <div class="notification-message">${message}</div>
+        <div class="notification-time">Just now</div>
+    `;
+    
+    // Add to list
+    notificationsList.insertBefore(notification, notificationsList.firstChild);
+    
+    // Show toast notification
+    showToastNotification(title, message);
+    
+    // Play sound
+    playSound('notification');
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Show toast notification
+function showToastNotification(title, message) {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fas fa-bell"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Show animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Hide and remove after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Play sound
+function playSound(soundName) {
+    console.log('Playing sound:', soundName);
+    
+    // Simple Web Audio API implementation
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        let frequency = 440;
+        let duration = 0.1;
+        
+        switch(soundName) {
+            case 'login':
+                frequency = 523.25;
+                duration = 1.5;
+                oscillator.type = 'sine';
+                break;
+            case 'click':
+                frequency = 800;
+                duration = 0.03;
+                oscillator.type = 'square';
+                break;
+            case 'notification':
+                frequency = 1046.50;
+                duration = 0.2;
+                oscillator.type = 'sine';
+                break;
+            case 'window':
+                frequency = 659.25;
+                duration = 0.15;
+                oscillator.type = 'sine';
+                break;
+            case 'error':
+                frequency = 220;
+                duration = 0.5;
+                oscillator.type = 'sawtooth';
+                break;
+            case 'minimize':
+                frequency = 523.25;
+                duration = 0.15;
+                oscillator.type = 'sine';
+                break;
+            default:
+                frequency = 440;
+                duration = 0.1;
+        }
+        
+        oscillator.frequency.value = frequency;
+        
+        const now = audioContext.currentTime;
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+        
+    } catch (error) {
+        console.log('Audio error:', error);
+    }
+}
+
+// Show spotlight
+function showSpotlight() {
+    if (isLocked) return;
+    
+    const spotlight = document.getElementById('spotlight');
+    if (spotlight) {
+        spotlight.style.display = 'block';
+        const input = document.getElementById('spotlightInput');
+        if (input) {
+            input.focus();
+        }
+        playSound('click');
+    }
+}
+
+// Hide spotlight
+function hideSpotlight() {
+    const spotlight = document.getElementById('spotlight');
+    if (spotlight) {
+        spotlight.style.display = 'none';
+    }
+}
+
+// Show mission control
+function showMissionControl() {
+    if (isLocked) return;
+    
+    const missionControl = document.getElementById('missionControl');
+    if (missionControl) {
+        missionControl.style.display = 'block';
+        playSound('click');
+    }
+}
+
+// Hide mission control
+function hideMissionControl() {
+    const missionControl = document.getElementById('missionControl');
+    if (missionControl) {
+        missionControl.style.display = 'none';
+    }
+}
+
+// Show launchpad
+function showLaunchpad() {
+    if (isLocked) return;
+    
+    const launchpad = document.getElementById('launchpad');
+    if (launchpad) {
+        launchpad.style.display = 'block';
+        playSound('click');
+    }
+}
+
+// Hide launchpad
+function hideLaunchpad() {
+    const launchpad = document.getElementById('launchpad');
+    if (launchpad) {
+        launchpad.style.display = 'none';
+    }
+}
+
+// Show shutdown modal
+function showShutdownModal() {
+    const modal = document.getElementById('shutdownModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        playSound('click');
+    }
+}
+
+// Show restart modal
+function showRestartModal() {
+    const modal = document.getElementById('restartModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        playSound('click');
+    }
+}
+
+// Show sleep
+function showSleep() {
+    playSound('click');
+    showNotification('Sleep Mode', 'Click to wake up');
+    
+    // Dim the screen
+    if (lockScreen.classList.contains('active')) {
+        lockScreen.style.opacity = '0.3';
+        setTimeout(() => {
+            lockScreen.style.opacity = '1';
+        }, 1000);
+    } else if (desktop.classList.contains('active')) {
+        desktop.style.opacity = '0.3';
+        setTimeout(() => {
+            desktop.style.opacity = '1';
+        }, 1000);
+    }
+}
+
+// Shutdown system
+function shutdownSystem() {
+    playSound('shutdown');
+    hideAllModals();
+    
+    // Create shutdown animation
+    const overlay = document.createElement('div');
+    overlay.className = 'shutdown-overlay';
+    overlay.innerHTML = '<div class="shutdown-text">Shutting down...</div>';
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        // Return to lock screen
+        lockScreen.classList.add('active');
+        lockScreen.style.display = 'block';
+        desktop.classList.remove('active');
+        desktop.style.display = 'none';
+        
+        // Close all windows
+        document.querySelectorAll('.app-window').forEach(window => {
+            window.style.display = 'none';
+        });
+        
+        currentWindows = [];
+        
+        // Remove overlay
+        overlay.remove();
+        
+        isLocked = true;
+        
+        // Show notification
+        setTimeout(() => {
+            showNotification('System Shut Down', 'Click screen to turn on');
+        }, 1000);
+    }, 2000);
+}
+
+// Restart system
+function restartSystem() {
+    playSound('restart');
+    hideAllModals();
+    
+    // Create restart animation
+    const overlay = document.createElement('div');
+    overlay.className = 'restart-overlay';
+    overlay.innerHTML = '<div class="restart-text">Restarting...</div><div class="apple-logo"></div>';
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        // Close all windows
+        document.querySelectorAll('.app-window').forEach(window => {
+            window.style.display = 'none';
+        });
+        
+        currentWindows = [];
+        
+        // Show lock screen with startup sound
+        lockScreen.classList.add('active');
+        lockScreen.style.display = 'block';
+        desktop.classList.remove('active');
+        desktop.style.display = 'none';
+        
+        // Remove overlay
+        overlay.remove();
+        
+        isLocked = true;
+        
+        // Play startup sound after delay
+        setTimeout(() => {
+            playSound('login');
+            setTimeout(() => {
+                showNotification('System Restarted', 'Welcome back!');
+            }, 1000);
+        }, 500);
+    }, 2000);
+}
+
+// Hide all modals
+function hideAllModals() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.style.display = 'none';
+    });
+}
+
+// Hide sound test
+function hideSoundTest() {
+    const modal = document.getElementById('soundTestModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Setup music player
+function setupMusicPlayer() {
+    const musicWindow = document.getElementById('musicWindow');
+    if (!musicWindow) return;
+    
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const songItems = document.querySelectorAll('.song-item');
+    
+    let currentSong = null;
+    let isPlaying = false;
+    
+    // Song data
+    const songs = [
+        { id: 1, title: 'Blinding Lights', artist: 'The Weeknd', duration: '3:20' },
+        { id: 2, title: 'Midnight City', artist: 'M83', duration: '4:04' }
+    ];
+    
+    // Play song function
+    function playSong(songId) {
+        const song = songs.find(s => s.id === songId);
+        if (!song) return;
+        
+        currentSong = song;
+        document.getElementById('currentSongTitle').textContent = song.title;
+        document.getElementById('currentSongArtist').textContent = song.artist;
+        
+        // Update play button
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+        
+        isPlaying = true;
+        showNotification('Now Playing', `${song.title} - ${song.artist}`);
+    }
+    
+    // Toggle play/pause
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', function() {
+            if (!currentSong) {
+                // Play first song if none is playing
+                playSong(1);
+            } else {
+                if (isPlaying) {
+                    this.innerHTML = '<i class="fas fa-play"></i>';
+                    isPlaying = false;
+                } else {
+                    this.innerHTML = '<i class="fas fa-pause"></i>';
+                    isPlaying = true;
+                }
+            }
+            playSound('click');
+        });
+    }
+    
+    // Previous button
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            if (currentSong) {
+                const prevId = currentSong.id === 1 ? 2 : 1;
+                playSong(prevId);
+            } else {
+                playSong(1);
+            }
+            playSound('click');
+        });
+    }
+    
+    // Next button
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            if (currentSong) {
+                const nextId = currentSong.id === 2 ? 1 : 2;
+                playSong(nextId);
+            } else {
+                playSong(1);
+            }
+            playSound('click');
+        });
+    }
+    
+    // Song items click
+    songItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const songId = parseInt(this.getAttribute('data-song'));
+            playSong(songId);
+            playSound('click');
+        });
+    });
+}
+
+// Setup calculator
+function setupCalculator() {
+    const calculatorWindow = document.getElementById('calculatorWindow');
+    if (!calculatorWindow) return;
+    
+    const display = calculatorWindow.querySelector('.calc-current');
+    const buttons = calculatorWindow.querySelectorAll('.calc-btn');
+    
+    let currentInput = '0';
+    let previousInput = '';
+    let operation = null;
+    
+    // Update display
+    function updateDisplay() {
+        display.textContent = currentInput;
+    }
+    
+    // Handle button click
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const value = this.textContent;
+            playSound('click');
+            
+            if (value >= '0' && value <= '9') {
+                // Number input
+                if (currentInput === '0') {
+                    currentInput = value;
+                } else {
+                    currentInput += value;
+                }
+            } else if (value === '.') {
+                // Decimal point
+                if (!currentInput.includes('.')) {
+                    currentInput += '.';
+                }
+            } else if (value === '=') {
+                // Calculate
+                if (operation && previousInput) {
+                    const prev = parseFloat(previousInput);
+                    const current = parseFloat(currentInput);
+                    let result;
+                    
+                    switch(operation) {
+                        case '+': result = prev + current; break;
+                        case '-': result = prev - current; break;
+                        case '×': result = prev * current; break;
+                        case '÷': result = prev / current; break;
+                        default: result = current;
+                    }
+                    
+                    currentInput = result.toString();
+                    previousInput = '';
+                    operation = null;
+                }
+            } else {
+                // Operation
+                if (currentInput !== '0') {
+                    previousInput = currentInput;
+                    currentInput = '0';
+                    operation = value;
+                }
+            }
+            
+            updateDisplay();
+        });
+    });
+}
+
+// Setup terminal
+function setupTerminal() {
+    const terminalWindow = document.getElementById('terminalWindow');
+    if (!terminalWindow) return;
+    
+    const input = document.getElementById('terminalInput');
+    const output = terminalWindow.querySelector('.terminal-output');
+    
+    if (input && output) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const command = this.value.trim();
+                if (command) {
+                    // Add command to output
+                    const commandLine = document.createElement('div');
+                    commandLine.textContent = `macOS-Web:~ neelpatel$ ${command}`;
+                    output.appendChild(commandLine);
+                    
+                    // Process command
+                    let result = 'Command not found. Try: help, date, time, echo, clear';
+                    
+                    if (command === 'help') {
+                        result = 'Available commands: help, date, time, echo [text], clear, neel';
+                    } else if (command === 'date') {
+                        result = new Date().toLocaleDateString();
+                    } else if (command === 'time') {
+                        result = new Date().toLocaleTimeString();
+                    } else if (command.startsWith('echo ')) {
+                        result = command.substring(5);
+                    } else if (command === 'clear') {
+                        output.innerHTML = '';
+                        result = '';
+                    } else if (command === 'neel') {
+                        result = 'Created by Neel Patel - macOS Web Emulator';
+                    }
+                    
+                    if (result) {
+                        const resultLine = document.createElement('div');
+                        resultLine.textContent = result;
+                        output.appendChild(resultLine);
+                    }
+                    
+                    // Clear input
+                    this.value = '';
+                    
+                    // Scroll to bottom
+                    output.scrollTop = output.scrollHeight;
+                    
+                    playSound('click');
+                }
+            }
+        });
+    }
+}
+
+// Initialize apps when they open
+document.addEventListener('click', function(e) {
+    // Check if music window was opened
+    if (e.target.closest('.dock-item[data-app="music"]') || 
+        e.target.closest('.desktop-icon[data-app="music"]')) {
+        setTimeout(setupMusicPlayer, 100);
+    }
+    
+    // Check if calculator was opened
+    if (e.target.closest('.dock-item[data-app="calculator"]') || 
+        e.target.closest('.desktop-icon[data-app="calculator"]')) {
+        setTimeout(setupCalculator, 100);
+    }
+    
+    // Check if terminal was opened
+    if (e.target.closest('.dock-item[data-app="terminal"]') || 
+        e.target.closest('.desktop-icon[data-app="terminal"]')) {
+        setTimeout(setupTerminal, 100);
+    }
+});
+
+// Initialize everything when desktop is shown
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'class') {
+            if (desktop.classList.contains('active')) {
+                // Re-setup icons and dock when desktop becomes active
+                setTimeout(() => {
+                    setupDesktopIcons();
+                    setupDockItems();
+                }, 100);
+            }
         }
     });
-}
+});
 
-function updateDockIndicators() {
-    dockItems.forEach(item => item.classList.remove('running'));
-    systemState.openWindows.forEach(window => {
-        const appName = window.getAttribute('data-app');
-        const dockItem = document.querySelector(`.dock-item[data-app="${appName}"]`);
-        if(dockItem) dockItem.classList.add('running');
-    });
-}
-
-function showAboutMac() {
-    playSystemSound('click');
-    aboutMacModal.style.display = 'flex';
-}
-
-function showAppStore() {
-    playSystemSound('click');
-    appStoreModal.style.display = 'flex';
-}
-
-function getRandomColor() {
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
-
-// Add CSS for new elements
-const additionalStyles = document.createElement('style');
-additionalStyles.textContent = `
-/* Power buttons on lock screen */
-.lock-screen-power {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    display: flex;
-    gap: 15px;
-}
-
-.power-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    transition: all 0.3s;
-    backdrop-filter: blur(10px);
-}
-
-.power-icon:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
-}
-
-/* Desktop power menu */
-.desktop-power-menu {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.desktop-power-menu:hover {
-    opacity: 1;
-}
-
-.power-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 8px 15px;
-    color: #1d1d1f;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-    transition: all 0.3s;
-    backdrop-filter: blur(10px);
-}
-
-.power-btn:hover {
-    background: rgba(255, 255, 255, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-/* Apple menu dropdown */
-.apple-menu {
-    position: relative;
-    cursor: pointer;
-}
-
-.apple-menu-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    border-radius: 8px;
-    padding: 8px 0;
-    min-width: 200px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    display: none;
-    z-index: 10000;
-}
-
-.apple-menu-dropdown.show {
-    display: block;
-    animation: fadeIn 0.2s ease;
-}
-
-.dropdown-item {
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #1d1d1f;
-    transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-    background: #007aff;
-    color: white;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background: rgba(0, 0, 0, 0.1);
-    margin: 6px 0;
-}
-
-/* Power modals */
-.power-modal {
-    text-align: center;
-    max-width: 400px;
-}
-
-.power-icon-large {
-    font-size: 3rem;
-    color: #007aff;
-    margin-bottom: 20px;
-}
-
-.power-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 25px;
-}
-
-.power-cancel, .power-confirm {
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    border: none;
-    transition: all 0.2s;
-}
-
-.power-cancel {
-    background: #f5f5f7;
-    color: #424245;
-}
-
-.power-confirm {
-    background: #007aff;
-    color: white;
-}
-
-.power-cancel:hover {
-    background: #e5e5e7;
-}
-
-.power-confirm:hover {
-    background: #0056cc;
-}
-
-/* Shutdown/Restart overlays */
-.shutdown-overlay, .restart-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 2rem;
-    z-index: 100000;
-    transition: opacity 0.5s;
-}
-
-.restart-overlay .apple-logo {
-    font-size: 4rem;
-    margin-top: 20px;
-}
-
-.sleep-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 100000;
-    transition: opacity 0.5s;
-}
-
-/* Music player enhancements */
-.music-card {
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.music-card:hover {
-    transform: translateY(-5px);
-}
-
-.music-card-art {
-    position: relative;
-    border-radius: 8px;
-    height: 150px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    color: white;
-    overflow: hidden;
-}
-
-.play-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.music-card:hover .play-overlay {
-    opacity: 1;
-}
-
-.now-playing-bar {
-    background: #f5f5f7;
-    border-radius: 10px;
-    padding: 15px;
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.np-album-art {
-    width: 50px;
-    height: 50px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: white;
-}
-
-.np-controls {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-.np-control-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: white;
-    color: #424245;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.np-control-btn:hover {
-    background: #007aff;
-    color: white;
-}
-
-.play-btn {
-    width: 50px;
-    height: 50px;
-    background: #007aff !important;
-    color: white !important;
-}
-
-/* Photos app */
-.photos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-    padding: 20px;
-}
-
-.photo-item {
-    aspect-ratio: 1;
-    border-radius: 8px;
-    background: #f5f5f7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    color: #86868b;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.photo-item:hover {
-    transform: scale(1.05);
-}
-
-/* Messages app */
-.chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-}
-
-.message {
-    margin-bottom: 15px;
-    max-width: 70%;
-}
-
-.message.received {
-    margin-right: auto;
-}
-
-.message.sent {
-    margin-left: auto;
-}
-
-.message-content {
-    background: #f5f5f7;
-    padding: 10px 15px;
-    border-radius: 15px;
-    font-size: 0.9rem;
-}
-
-.message.sent .message-content {
-    background: #007aff;
-    color: white;
-}
-
-.message-time {
-    font-size: 0.8rem;
-    color: #86868b;
-    margin-top: 5px;
-    text-align: right;
-}
-
-.chat-input {
-    display: flex;
-    gap: 10px;
-    padding: 15px;
-    border-top: 1px solid #e5e5e7;
-}
-
-.chat-input input {
-    flex: 1;
-    padding: 10px 15px;
-    border: 1px solid #e5e5e7;
-    border-radius: 20px;
-    font-size: 0.9rem;
-}
-
-.chat-input button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: #007aff;
-    color: white;
-    cursor: pointer;
-}
-
-/* About Mac modal */
-.about-modal {
-    max-width: 500px;
-}
-
-.about-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.about-logo {
-    font-size: 2.5rem;
-}
-
-.about-section {
-    margin-bottom: 20px;
-}
-
-.about-section h3, .about-section h4 {
-    margin-bottom: 10px;
-}
-
-.about-section p {
-    margin: 5px 0;
-    color: #424245;
-}
-
-.about-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 20px;
-}
-
-.about-btn {
-    padding: 8px 16px;
-    border: 1px solid #e5e5e7;
-    border-radius: 6px;
-    background: white;
-    color: #424245;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.about-btn:hover {
-    background: #f5f5f7;
-}
-
-/* App Store modal */
-.appstore-modal {
-    max-width: 600px;
-    max-height: 80vh;
-}
-
-.appstore-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.featured-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-.featured-app {
-    background: #f5f5f7;
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.featured-app:hover {
-    transform: translateY(-5px);
-}
-
-.featured-app .app-icon {
-    width: 60px;
-    height: 60px;
-    background: white;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    margin: 0 auto 15px;
-}
-`;
-document.head.appendChild(additionalStyles);
+observer.observe(desktop, { attributes: true });
