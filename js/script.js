@@ -1,8 +1,7 @@
+// macOS Web - Main Script
 // DOM Elements
 const lockScreen = document.getElementById('lockScreen');
 const desktop = document.getElementById('desktop');
-const lockTime = document.getElementById('lockTime');
-const lockDate = document.getElementById('lockDate');
 const desktopTime = document.getElementById('desktopTime');
 const lockPassword = document.getElementById('lockPassword');
 const unlockBtn = document.getElementById('unlockBtn');
@@ -33,62 +32,42 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup desktop icons
     setupDesktopIcons();
+    
+    // Setup lock button
+    setupLockButton();
 });
 
 // Update time function
 function updateTime() {
     const now = new Date();
     const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    const dateString = now.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
     
-    if (lockTime) lockTime.textContent = timeString;
     if (desktopTime) desktopTime.textContent = timeString;
-    if (lockDate) lockDate.textContent = dateString;
+}
+
+// Setup lock button
+function setupLockButton() {
+    const lockBtn = document.getElementById('desktopLockBtn');
+    if (lockBtn) {
+        lockBtn.addEventListener('click', () => {
+            if (window.lockMac) {
+                window.lockMac();
+            }
+        });
+    }
 }
 
 // Setup event listeners
 function setupEventListeners() {
     console.log('Setting up event listeners...');
     
-    // Unlock button
-    if (unlockBtn) {
-        unlockBtn.addEventListener('click', unlockMac);
-    }
-    
-    // Password enter key
-    if (lockPassword) {
-        lockPassword.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                unlockMac();
+    // Desktop lock button
+    const desktopLockBtn = document.getElementById('desktopLockBtn');
+    if (desktopLockBtn) {
+        desktopLockBtn.addEventListener('click', function() {
+            if (window.lockMac) {
+                window.lockMac();
             }
-        });
-    }
-    
-    // Power buttons on lock screen
-    const lockSleepBtn = document.getElementById('lockSleepBtn');
-    const lockRestartBtn = document.getElementById('lockRestartBtn');
-    const lockShutdownBtn = document.getElementById('lockShutdownBtn');
-    
-    if (lockSleepBtn) {
-        lockSleepBtn.addEventListener('click', function() {
-            showSleep();
-        });
-    }
-    
-    if (lockRestartBtn) {
-        lockRestartBtn.addEventListener('click', function() {
-            showRestartModal();
-        });
-    }
-    
-    if (lockShutdownBtn) {
-        lockShutdownBtn.addEventListener('click', function() {
-            showShutdownModal();
         });
     }
     
@@ -176,6 +155,14 @@ function setupEventListeners() {
             showSpotlight();
         }
         
+        // Cmd/Ctrl + L to lock
+        if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
+            e.preventDefault();
+            if (window.lockMac) {
+                window.lockMac();
+            }
+        }
+        
         // Escape to close things
         if (e.key === 'Escape') {
             hideSpotlight();
@@ -199,6 +186,14 @@ function setupEventListeners() {
         if (e.key === 'F4') {
             e.preventDefault();
             showLaunchpad();
+        }
+        
+        // Cmd/Ctrl + Q to quit (lock)
+        if ((e.metaKey || e.ctrlKey) && e.key === 'q') {
+            e.preventDefault();
+            if (window.lockMac) {
+                window.lockMac();
+            }
         }
     });
 }
@@ -399,48 +394,6 @@ function updateDockIndicator(appName, isRunning) {
     }
 }
 
-// Unlock macOS
-function unlockMac() {
-    console.log('Unlock attempt...');
-    
-    const password = lockPassword ? lockPassword.value : '';
-    
-    if (password === 'macos' || password === '') {
-        console.log('Unlock successful');
-        playSound('login');
-        
-        // Hide lock screen
-        lockScreen.classList.remove('active');
-        lockScreen.style.display = 'none';
-        
-        // Show desktop
-        desktop.classList.add('active');
-        desktop.style.display = 'block';
-        
-        isLocked = false;
-        
-        // Show welcome notification (but not immediately)
-        setTimeout(() => {
-            showNotification('Welcome to macOS Web', 'Created by Neel Patel');
-        }, 1000);
-        
-        // Clear password field
-        if (lockPassword) {
-            lockPassword.value = '';
-        }
-    } else {
-        console.log('Unlock failed');
-        playSound('error');
-        if (lockPassword) {
-            lockPassword.style.animation = 'shake 0.5s';
-            setTimeout(() => {
-                lockPassword.style.animation = '';
-                lockPassword.value = '';
-            }, 500);
-        }
-    }
-}
-
 // Show notification
 function showNotification(title, message) {
     console.log('Showing notification:', title);
@@ -528,7 +481,8 @@ function playSound(soundName) {
         let duration = 0.1;
         
         switch(soundName) {
-            case 'login':
+            case 'startup':
+                // macOS startup chime
                 frequency = 523.25;
                 duration = 1.5;
                 oscillator.type = 'sine';
@@ -557,6 +511,11 @@ function playSound(soundName) {
                 frequency = 523.25;
                 duration = 0.15;
                 oscillator.type = 'sine';
+                break;
+            case 'trash':
+                frequency = 349.23;
+                duration = 0.3;
+                oscillator.type = 'sawtooth';
                 break;
             default:
                 frequency = 440;
@@ -659,26 +618,14 @@ function showRestartModal() {
 
 // Show sleep
 function showSleep() {
-    playSound('click');
-    showNotification('Sleep Mode', 'Click to wake up');
-    
-    // Dim the screen
-    if (lockScreen.classList.contains('active')) {
-        lockScreen.style.opacity = '0.3';
-        setTimeout(() => {
-            lockScreen.style.opacity = '1';
-        }, 1000);
-    } else if (desktop.classList.contains('active')) {
-        desktop.style.opacity = '0.3';
-        setTimeout(() => {
-            desktop.style.opacity = '1';
-        }, 1000);
+    if (window.sleepMac) {
+        window.sleepMac();
     }
 }
 
 // Shutdown system
 function shutdownSystem() {
-    playSound('shutdown');
+    playSound('error');
     hideAllModals();
     
     // Create shutdown animation
@@ -689,10 +636,9 @@ function shutdownSystem() {
     
     setTimeout(() => {
         // Return to lock screen
-        lockScreen.classList.add('active');
-        lockScreen.style.display = 'block';
-        desktop.classList.remove('active');
-        desktop.style.display = 'none';
+        if (window.lockScreen) {
+            window.lockScreen.lock();
+        }
         
         // Close all windows
         document.querySelectorAll('.app-window').forEach(window => {
@@ -704,8 +650,6 @@ function shutdownSystem() {
         // Remove overlay
         overlay.remove();
         
-        isLocked = true;
-        
         // Show notification
         setTimeout(() => {
             showNotification('System Shut Down', 'Click screen to turn on');
@@ -715,7 +659,7 @@ function shutdownSystem() {
 
 // Restart system
 function restartSystem() {
-    playSound('restart');
+    playSound('notification');
     hideAllModals();
     
     // Create restart animation
@@ -733,19 +677,18 @@ function restartSystem() {
         currentWindows = [];
         
         // Show lock screen with startup sound
-        lockScreen.classList.add('active');
-        lockScreen.style.display = 'block';
-        desktop.classList.remove('active');
-        desktop.style.display = 'none';
+        if (window.lockScreen) {
+            window.lockScreen.lock();
+        }
         
         // Remove overlay
         overlay.remove();
         
-        isLocked = true;
-        
         // Play startup sound after delay
         setTimeout(() => {
-            playSound('login');
+            if (window.lockScreen && window.lockScreen.playStartupSound) {
+                window.lockScreen.playStartupSound();
+            }
             setTimeout(() => {
                 showNotification('System Restarted', 'Welcome back!');
             }, 1000);
@@ -1009,6 +952,7 @@ const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.attributeName === 'class') {
             if (desktop.classList.contains('active')) {
+                isLocked = false;
                 // Re-setup icons and dock when desktop becomes active
                 setTimeout(() => {
                     setupDesktopIcons();
@@ -1020,3 +964,10 @@ const observer = new MutationObserver(function(mutations) {
 });
 
 observer.observe(desktop, { attributes: true });
+
+// Make functions globally available
+window.showNotification = showNotification;
+window.playSound = playSound;
+window.showShutdownModal = showShutdownModal;
+window.showRestartModal = showRestartModal;
+window.showSleep = showSleep;
