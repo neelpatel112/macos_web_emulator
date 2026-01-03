@@ -73,31 +73,55 @@ body {
     100% { opacity: 0.7; }
 }
 
-/* Top Info Bar */
-.lock-screen-top-bar {
+/* Lock Screen Status Bar (Top) */
+.lock-screen-status-bar {
     position: absolute;
-    top: 20px;
+    top: 0;
     left: 0;
     width: 100%;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 5px;
+    justify-content: space-between;
+    padding: 0 20px;
     z-index: 2;
-    padding: 20px;
-    backdrop-filter: blur(5px);
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-left {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.status-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.status-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-right i {
+    font-size: 1rem;
+    opacity: 0.9;
 }
 
 .lock-time-small {
-    font-size: 1.8rem;
-    font-weight: 300;
+    font-size: 1rem;
+    font-weight: 500;
     letter-spacing: -0.5px;
-}
-
-.lock-date-small {
-    font-size: 0.9rem;
-    opacity: 0.8;
-    font-weight: 300;
 }
 
 /* Main Content */
@@ -110,7 +134,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 100px;
+    margin-top: 150px;
 }
 
 /* Time Display */
@@ -318,16 +342,13 @@ body {
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Bottom Controls */
-.lock-screen-bottom-controls {
+/* Power Controls (Icons Only - Bottom Right) */
+.lock-screen-power-controls {
     position: absolute;
     bottom: 30px;
-    left: 0;
-    width: 100%;
+    right: 30px;
     display: flex;
-    justify-content: center;
-    gap: 40px;
-    padding: 0 20px;
+    gap: 20px;
     z-index: 2;
     animation: controlsFadeIn 1s ease-out 0.8s both;
 }
@@ -337,67 +358,68 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.control-btn {
+.power-icon-btn {
+    width: 50px;
+    height: 50px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 12px 20px;
+    border-radius: 50%;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    font-weight: 300;
-    min-width: 120px;
     justify-content: center;
+    font-size: 1.2rem;
 }
 
-.control-btn:hover {
+.power-icon-btn:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    transform: scale(1.1);
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
 }
 
-.control-btn i {
-    font-size: 1rem;
-}
-
-/* Emergency SOS */
+/* Emergency SOS (Bottom Left) */
 .emergency-sos {
     position: absolute;
-    bottom: 100px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
+    bottom: 30px;
+    left: 30px;
     z-index: 2;
+    animation: sosFadeIn 1s ease-out 0.8s both;
+}
+
+@keyframes sosFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .sos-btn {
+    width: 50px;
+    height: 50px;
     background: rgba(255, 59, 48, 0.2);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 59, 48, 0.3);
-    border-radius: 20px;
-    padding: 10px 25px;
+    border-radius: 50%;
     color: #ff3b30;
     cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 400;
-    letter-spacing: 0.5px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.3s ease;
 }
 
 .sos-btn:hover {
     background: rgba(255, 59, 48, 0.3);
     border-color: rgba(255, 59, 48, 0.5);
+    transform: scale(1.1);
 }
 
 /* Biometric Indicator */
 .biometric-indicator {
     position: absolute;
-    bottom: 200px;
+    bottom: 100px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -443,73 +465,6 @@ body {
     animation: shakeError 0.5s ease-in-out;
     border-color: #ff3b30 !important;
     background: rgba(255, 59, 48, 0.1) !important;
-}
-
-/* Screen Sleep Effect */
-.screen-sleep {
-    animation: sleepFade 0.5s ease-out forwards;
-}
-
-@keyframes sleepFade {
-    to { opacity: 0; }
-}
-
-/* Wake Up Effect */
-.wake-up {
-    animation: wakeUpFade 0.5s ease-out forwards;
-}
-
-@keyframes wakeUpFade {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Desktop Fade Effect */
-.desktop-fade-in {
-    animation: desktopFadeIn 1s ease-out forwards;
-}
-
-@keyframes desktopFadeIn {
-    from { 
-        opacity: 0; 
-        transform: scale(1.02);
-        filter: blur(10px);
-    }
-    to { 
-        opacity: 1; 
-        transform: scale(1);
-        filter: blur(0);
-    }
-}
-
-/* Unlock Animation */
-.unlock-animation {
-    animation: unlockEffect 1s ease-out forwards;
-}
-
-@keyframes unlockEffect {
-    0% { 
-        opacity: 1;
-        transform: scale(1);
-        filter: blur(0);
-    }
-    50% {
-        opacity: 0.5;
-        transform: scale(1.05);
-        filter: blur(5px);
-    }
-    100% { 
-        opacity: 0;
-        transform: scale(1.1);
-        filter: blur(10px);
-        display: none;
-    }
-}
-
-/* Emergency Pulse */
-@keyframes emergencyPulse {
-    0% { background-color: rgba(255, 59, 48, 0.1); }
-    100% { background-color: rgba(255, 59, 48, 0.3); }
 }
 
 /* ========== DESKTOP ========== */
@@ -1546,12 +1501,6 @@ body {
     to { opacity: 0; visibility: hidden; }
 }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
-}
-
 @keyframes minimizeToDock {
     0% { opacity: 1; transform: scale(1) translateY(0); }
     100% { opacity: 0; transform: scale(0.1) translateY(100px); }
@@ -1585,11 +1534,11 @@ body {
     
     .lock-screen-content {
         max-width: 90%;
-        margin-top: 50px;
+        margin-top: 100px;
     }
     
     .time-display h1 {
-        font-size: 3rem;
+        font-size: 3.5rem;
     }
     
     .time-display p {
@@ -1614,30 +1563,48 @@ body {
         height: 50px;
     }
     
-    .lock-screen-bottom-controls {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
+    .lock-screen-power-controls {
         bottom: 20px;
+        right: 20px;
+        gap: 15px;
     }
     
-    .control-btn {
-        min-width: 200px;
-        justify-content: center;
+    .power-icon-btn {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .emergency-sos {
+        bottom: 20px;
+        left: 20px;
+    }
+    
+    .sos-btn {
+        width: 45px;
+        height: 45px;
     }
     
     .biometric-indicator {
-        bottom: 150px;
+        bottom: 80px;
     }
     
     .spotlight {
         width: 90%;
     }
+    
+    .lock-screen-status-bar {
+        padding: 0 15px;
+        font-size: 0.8rem;
+    }
+    
+    .status-right {
+        gap: 10px;
+    }
 }
 
 @media (max-height: 700px) {
     .lock-screen-content {
-        margin-top: 30px;
+        margin-top: 80px;
     }
     
     .time-display {
@@ -1645,7 +1612,7 @@ body {
     }
     
     .time-display h1 {
-        font-size: 3.5rem;
+        font-size: 3rem;
     }
     
     .user-profile {
@@ -1659,5 +1626,9 @@ body {
     
     .lock-screen-quick-actions {
         margin: 20px 0;
+    }
+    
+    .biometric-indicator {
+        bottom: 70px;
     }
 }
