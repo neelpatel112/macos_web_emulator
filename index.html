@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>macOS Web by Neel Patel</title>
     <meta name="author" content="Neel Patel">
-    <meta name="copyright" content="© 2024 Neel Patel. All rights reserved.">
+    <meta name="copyright" content="© 2026 Neel Patel. All rights reserved.">
     
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,19 +37,17 @@
                     <button id="unlockBtn"><i class="fas fa-arrow-right"></i></button>
                 </div>
             </div>
-            <!-- Restart & Shutdown Buttons -->
-            <div class="power-buttons">
-                <button id="restartBtn" class="power-btn">
+            <!-- Power Buttons at Bottom Right -->
+            <div class="lock-screen-power">
+                <button id="lockRestartBtn" class="power-icon" title="Restart">
                     <i class="fas fa-redo"></i>
-                    <span>Restart</span>
                 </button>
-                <button id="shutdownBtn" class="power-btn">
+                <button id="lockShutdownBtn" class="power-icon" title="Shut Down">
                     <i class="fas fa-power-off"></i>
-                    <span>Shut Down</span>
                 </button>
-            </div>
-            <div class="power-hint">
-                <p>Password: "macos" or leave empty</p>
+                <button id="sleepBtn" class="power-icon" title="Sleep">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -60,6 +58,23 @@
         <div class="menu-bar">
             <div class="apple-menu">
                 <span></span>
+                <div class="apple-menu-dropdown">
+                    <div class="dropdown-item" data-action="about">About This Mac</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" data-action="preferences">System Preferences...</div>
+                    <div class="dropdown-item" data-action="app-store">App Store...</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" data-action="recent">Recent Items</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" data-action="force-quit">Force Quit...</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" data-action="sleep">Sleep</div>
+                    <div class="dropdown-item" data-action="restart">Restart...</div>
+                    <div class="dropdown-item" data-action="shutdown">Shut Down...</div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" data-action="lock">Lock Screen</div>
+                    <div class="dropdown-item" data-action="logout">Log Out Neel Patel...</div>
+                </div>
             </div>
             <div class="menu-items">
                 <span class="menu-item">Finder</span>
@@ -71,10 +86,12 @@
             </div>
             <div class="menu-right">
                 <div class="status-icons">
-                    <i class="fas fa-wifi"></i>
-                    <i class="fas fa-battery-three-quarters"></i>
-                    <i class="fas fa-search" id="spotlightBtn"></i>
-                    <span id="desktopTime">00:00</span>
+                    <i class="fas fa-wifi" title="Wi-Fi Connected"></i>
+                    <i class="fas fa-battery-three-quarters" title="Battery 75%"></i>
+                    <i class="fas fa-search" id="spotlightBtn" title="Spotlight Search"></i>
+                    <i class="fas fa-bell" id="notificationBtn" title="Notifications"></i>
+                    <i class="fas fa-user-circle" id="userMenuBtn" title="User Menu"></i>
+                    <span id="desktopTime" title="Click for Date & Time">00:00</span>
                 </div>
             </div>
         </div>
@@ -117,6 +134,18 @@
                 </div>
                 <span class="icon-label">System Preferences</span>
             </div>
+            <div class="desktop-icon" data-app="photos">
+                <div class="icon-img">
+                    <i class="fas fa-images"></i>
+                </div>
+                <span class="icon-label">Photos</span>
+            </div>
+            <div class="desktop-icon" data-app="messages">
+                <div class="icon-img">
+                    <i class="fas fa-comment-alt"></i>
+                </div>
+                <span class="icon-label">Messages</span>
+            </div>
         </div>
 
         <!-- Dock -->
@@ -152,6 +181,22 @@
 
         <!-- Windows Container -->
         <div id="windowsContainer"></div>
+
+        <!-- Power Menu (Bottom Right) -->
+        <div class="desktop-power-menu">
+            <button id="desktopRestartBtn" class="power-btn" title="Restart">
+                <i class="fas fa-redo"></i>
+                <span>Restart</span>
+            </button>
+            <button id="desktopShutdownBtn" class="power-btn" title="Shut Down">
+                <i class="fas fa-power-off"></i>
+                <span>Shut Down</span>
+            </button>
+            <button id="desktopSleepBtn" class="power-btn" title="Sleep">
+                <i class="fas fa-moon"></i>
+                <span>Sleep</span>
+            </button>
+        </div>
     </div>
 
     <!-- ========== MODALS & WINDOWS ========== -->
@@ -232,13 +277,56 @@
         </div>
     </div>
 
+    <!-- Power Modals -->
+    <div id="shutdownModal" class="modal" style="display: none;">
+        <div class="modal-content power-modal">
+            <div class="power-icon-large">
+                <i class="fas fa-power-off"></i>
+            </div>
+            <h3>Shut Down Your Computer?</h3>
+            <p>Your computer will shut down. You can turn it back on by clicking the screen.</p>
+            <div class="power-actions">
+                <button class="power-cancel">Cancel</button>
+                <button class="power-confirm" id="confirmShutdown">Shut Down</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="restartModal" class="modal" style="display: none;">
+        <div class="modal-content power-modal">
+            <div class="power-icon-large">
+                <i class="fas fa-redo"></i>
+            </div>
+            <h3>Restart Your Computer?</h3>
+            <p>Your computer will restart. All windows will close and reopen.</p>
+            <div class="power-actions">
+                <button class="power-cancel">Cancel</button>
+                <button class="power-confirm" id="confirmRestart">Restart</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sleepModal" class="modal" style="display: none;">
+        <div class="modal-content power-modal">
+            <div class="power-icon-large">
+                <i class="fas fa-moon"></i>
+            </div>
+            <h3>Put Computer to Sleep?</h3>
+            <p>Your computer will go to sleep. Click the screen to wake it up.</p>
+            <div class="power-actions">
+                <button class="power-cancel">Cancel</button>
+                <button class="power-confirm" id="confirmSleep">Sleep</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sound Test Modal -->
     <div id="soundTestModal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Test System Sounds</h3>
             <div class="sound-test-buttons">
                 <button class="sound-test-btn" data-sound="login">
-                    <i class="fas fa-power-off"></i> Login Sound
+                    <i class="fas fa-power-off"></i> Startup Sound
                 </button>
                 <button class="sound-test-btn" data-sound="click">
                     <i class="fas fa-mouse-pointer"></i> Click Sound
@@ -262,32 +350,81 @@
         </div>
     </div>
 
-    <!-- Shutdown Modal -->
-    <div id="shutdownModal" class="modal" style="display: none;">
-        <div class="modal-content shutdown-modal">
-            <div class="shutdown-icon">
-                <i class="fas fa-power-off"></i>
+    <!-- About This Mac Modal -->
+    <div id="aboutMacModal" class="modal" style="display: none;">
+        <div class="modal-content about-modal">
+            <div class="about-header">
+                <div class="about-logo"></div>
+                <h2>About This Mac</h2>
             </div>
-            <h3>Shutting Down...</h3>
-            <p>Your computer will shut down in a moment.</p>
-            <div class="shutdown-progress"></div>
+            <div class="about-content">
+                <div class="about-section">
+                    <h3>macOS Web Emulator</h3>
+                    <p>Version 1.0 (Build 24A123)</p>
+                    <p>Created by Neel Patel</p>
+                </div>
+                <div class="about-section">
+                    <h4>Specifications</h4>
+                    <p>Processor: Apple M3 Pro (12-core)</p>
+                    <p>Memory: 16 GB Unified Memory</p>
+                    <p>Graphics: Apple M3 Pro (18-core)</p>
+                    <p>Storage: 512 GB SSD</p>
+                    <p>Serial Number: C02ABCD12345</p>
+                </div>
+                <div class="about-section">
+                    <h4>Software</h4>
+                    <p>Built with HTML5, CSS3, and JavaScript</p>
+                    <p>Font: SF Pro Display</p>
+                    <p>Icons: Font Awesome 6.4.0</p>
+                </div>
+            </div>
+            <div class="about-actions">
+                <button class="about-btn" id="softwareUpdate">Software Update...</button>
+                <button class="about-btn" id="systemReport">System Report...</button>
+                <button class="about-btn" id="closeAbout">Done</button>
+            </div>
         </div>
     </div>
 
-    <!-- Restart Modal -->
-    <div id="restartModal" class="modal" style="display: none;">
-        <div class="modal-content restart-modal">
-            <div class="restart-icon">
-                <i class="fas fa-redo"></i>
+    <!-- App Store Modal -->
+    <div id="appStoreModal" class="modal" style="display: none;">
+        <div class="modal-content appstore-modal">
+            <div class="appstore-header">
+                <h2><i class="fas fa-shopping-bag"></i> App Store</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
             </div>
-            <h3>Restarting...</h3>
-            <p>Your computer will restart in a moment.</p>
-            <div class="restart-progress"></div>
+            <div class="appstore-content">
+                <div class="appstore-featured">
+                    <h3>Featured Apps</h3>
+                    <div class="featured-grid">
+                        <div class="featured-app" data-app="xcode">
+                            <div class="app-icon"><i class="fas fa-code"></i></div>
+                            <h4>Xcode</h4>
+                            <p>Developer Tools</p>
+                        </div>
+                        <div class="featured-app" data-app="finalcut">
+                            <div class="app-icon"><i class="fas fa-film"></i></div>
+                            <h4>Final Cut Pro</h4>
+                            <p>Video Editing</p>
+                        </div>
+                        <div class="featured-app" data-app="logic">
+                            <div class="app-icon"><i class="fas fa-music"></i></div>
+                            <h4>Logic Pro</h4>
+                            <p>Music Production</p>
+                        </div>
+                        <div class="featured-app" data-app="pages">
+                            <div class="app-icon"><i class="fas fa-file-alt"></i></div>
+                            <h4>Pages</h4>
+                            <p>Word Processing</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Sound Player -->
-    <audio id="soundPlayer" preload="auto"></audio>
+    <!-- Music Player -->
+    <audio id="musicPlayer" preload="auto"></audio>
 
     <!-- Pre-built App Windows (Hidden by default) -->
     <div id="trashWindow" class="app-window" style="display: none;">
@@ -333,6 +470,12 @@
                 </div>
                 <div class="sidebar-item" data-pref="sound">
                     <i class="fas fa-volume-up"></i> Sound
+                </div>
+                <div class="sidebar-item" data-pref="users">
+                    <i class="fas fa-users"></i> Users & Groups
+                </div>
+                <div class="sidebar-item" data-pref="network">
+                    <i class="fas fa-wifi"></i> Network
                 </div>
             </div>
             <div class="preferences-main" id="preferencesPanel"></div>
@@ -404,39 +547,54 @@
         <div class="window-content music-content">
             <div class="music-sidebar">
                 <div class="sidebar-section">
-                    <div class="sidebar-item active"><i class="fas fa-music"></i> Listen Now</div>
-                    <div class="sidebar-item"><i class="fas fa-radio"></i> Radio</div>
+                    <div class="sidebar-item active" data-section="listen"><i class="fas fa-music"></i> Listen Now</div>
+                    <div class="sidebar-item" data-section="browse"><i class="fas fa-compass"></i> Browse</div>
+                    <div class="sidebar-item" data-section="radio"><i class="fas fa-radio"></i> Radio</div>
+                    <div class="sidebar-item" data-section="library"><i class="fas fa-book"></i> Library</div>
+                    <div class="sidebar-item" data-section="search"><i class="fas fa-search"></i> Search</div>
+                </div>
+                <div class="sidebar-section">
+                    <h4>Playlists</h4>
+                    <div class="sidebar-item" data-playlist="favorites"><i class="fas fa-heart"></i> Favorites</div>
+                    <div class="sidebar-item" data-playlist="recent"><i class="fas fa-history"></i> Recently Added</div>
+                    <div class="sidebar-item" data-playlist="top"><i class="fas fa-chart-line"></i> Top 25</div>
                 </div>
             </div>
             <div class="music-main">
-                <div class="music-grid">
-                    <div class="music-card" data-song="1">
-                        <div class="album-art" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                            <i class="fas fa-play"></i>
-                        </div>
-                        <h4>Midnight City</h4>
-                        <p>M83</p>
-                    </div>
-                    <div class="music-card" data-song="2">
-                        <div class="album-art" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
-                            <i class="fas fa-play"></i>
-                        </div>
-                        <h4>Blinding Lights</h4>
-                        <p>The Weeknd</p>
+                <div class="music-header">
+                    <h2>Listen Now</h2>
+                    <div class="music-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search music" id="musicSearch">
                     </div>
                 </div>
-                <div class="now-playing">
-                    <div class="np-album">
-                        <div class="album-art-large" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
-                    </div>
+                <div class="music-grid" id="musicGrid">
+                    <!-- Music cards will be populated here -->
+                </div>
+                <div class="now-playing-bar" id="nowPlayingBar">
                     <div class="np-info">
-                        <h3>Midnight City</h3>
-                        <p>M83 · Hurry Up, We're Dreaming</p>
-                        <div class="player-controls">
-                            <button><i class="fas fa-step-backward"></i></button>
-                            <button class="play-btn"><i class="fas fa-play"></i></button>
-                            <button><i class="fas fa-step-forward"></i></button>
+                        <div class="np-album-art" id="npAlbumArt"></div>
+                        <div class="np-details">
+                            <div class="np-title" id="npTitle">Not Playing</div>
+                            <div class="np-artist" id="npArtist">-</div>
                         </div>
+                    </div>
+                    <div class="np-controls">
+                        <button class="np-control-btn" id="prevBtn"><i class="fas fa-step-backward"></i></button>
+                        <button class="np-control-btn play-btn" id="playPauseBtn"><i class="fas fa-play"></i></button>
+                        <button class="np-control-btn" id="nextBtn"><i class="fas fa-step-forward"></i></button>
+                    </div>
+                    <div class="np-progress">
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="np-time">
+                            <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+                        </div>
+                    </div>
+                    <div class="np-volume">
+                        <i class="fas fa-volume-up"></i>
+                        <input type="range" id="musicVolume" min="0" max="100" value="80">
                     </div>
                 </div>
             </div>
@@ -499,6 +657,81 @@
                 <div class="terminal-input">
                     <span class="prompt">macOS-Web:~ neelpatel$</span>
                     <input type="text" id="terminalInput" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photos App Window -->
+    <div id="photosWindow" class="app-window photos-window" style="display: none;">
+        <div class="window-titlebar">
+            <div class="window-controls">
+                <div class="window-control close" data-window="photos"></div>
+                <div class="window-control minimize" data-window="photos"></div>
+                <div class="window-control expand" data-window="photos"></div>
+            </div>
+            <div class="window-title">Photos</div>
+        </div>
+        <div class="window-content photos-content">
+            <div class="photos-sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-item active"><i class="fas fa-images"></i> Library</div>
+                    <div class="sidebar-item"><i class="fas fa-calendar"></i> Moments</div>
+                    <div class="sidebar-item"><i class="fas fa-heart"></i> Favorites</div>
+                </div>
+            </div>
+            <div class="photos-main">
+                <div class="photos-grid" id="photosGrid">
+                    <!-- Photos will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages App Window -->
+    <div id="messagesWindow" class="app-window messages-window" style="display: none;">
+        <div class="window-titlebar">
+            <div class="window-controls">
+                <div class="window-control close" data-window="messages"></div>
+                <div class="window-control minimize" data-window="messages"></div>
+                <div class="window-control expand" data-window="messages"></div>
+            </div>
+            <div class="window-title">Messages</div>
+        </div>
+        <div class="window-content messages-content">
+            <div class="messages-sidebar">
+                <div class="sidebar-section">
+                    <h4>Conversations</h4>
+                    <div class="message-convo active">
+                        <div class="convo-avatar"><i class="fas fa-user"></i></div>
+                        <div class="convo-info">
+                            <div class="convo-name">Apple Support</div>
+                            <div class="convo-preview">Welcome to macOS Web!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="messages-main">
+                <div class="chat-header">
+                    <div class="chat-avatar"><i class="fas fa-user"></i></div>
+                    <div class="chat-info">
+                        <div class="chat-name">Apple Support</div>
+                        <div class="chat-status">Online</div>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message received">
+                        <div class="message-content">Welcome to macOS Web Messages! This is a simulated messaging app.</div>
+                        <div class="message-time">2:30 PM</div>
+                    </div>
+                    <div class="message sent">
+                        <div class="message-content">Thanks! This looks amazing!</div>
+                        <div class="message-time">2:31 PM</div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" placeholder="iMessage" id="messageInput">
+                    <button id="sendMessage"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
