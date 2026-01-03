@@ -1,9 +1,6 @@
 # macosWeb-
 so this is my current project status: 
 I'm still working on it ,,, 
-# macosWeb-
-so this is my current project status: 
-I'm still working on it ,,, 
 # macOS Web - macOS Interface in Browser
 
 ![macOS Web Screenshot](https://img.shields.io/badge/macOS-Web-blue)
