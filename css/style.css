@@ -102,6 +102,7 @@ body {
     display: flex;
     justify-content: center;
     gap: 10px;
+    margin-bottom: 30px;
 }
 
 .password-field input {
@@ -140,6 +141,57 @@ body {
 #unlockBtn:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: translateY(-2px);
+}
+
+/* Power Buttons */
+.power-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.power-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    padding: 12px 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.power-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+#shutdownBtn:hover {
+    background: rgba(255, 59, 48, 0.3);
+    border-color: rgba(255, 59, 48, 0.5);
+}
+
+#restartBtn:hover {
+    background: rgba(0, 122, 255, 0.3);
+    border-color: rgba(0, 122, 255, 0.5);
+}
+
+.power-hint {
+    margin-top: 15px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.power-hint p {
+    margin: 0;
 }
 
 /* ========== DESKTOP ========== */
@@ -975,6 +1027,70 @@ body {
     background: #0056cc;
 }
 
+/* Shutdown Modal */
+.shutdown-modal {
+    text-align: center;
+    padding: 40px;
+}
+
+.shutdown-icon {
+    font-size: 4rem;
+    color: #ff3b30;
+    margin-bottom: 20px;
+}
+
+.shutdown-progress {
+    height: 4px;
+    background: #e5e5e7;
+    border-radius: 2px;
+    margin-top: 30px;
+    overflow: hidden;
+}
+
+.shutdown-progress::after {
+    content: '';
+    display: block;
+    height: 100%;
+    background: #ff3b30;
+    width: 0%;
+    transition: width 2s ease;
+}
+
+/* Restart Modal */
+.restart-modal {
+    text-align: center;
+    padding: 40px;
+}
+
+.restart-icon {
+    font-size: 4rem;
+    color: #007aff;
+    margin-bottom: 20px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.restart-progress {
+    height: 4px;
+    background: #e5e5e7;
+    border-radius: 2px;
+    margin-top: 30px;
+    overflow: hidden;
+}
+
+.restart-progress::after {
+    content: '';
+    display: block;
+    height: 100%;
+    background: #007aff;
+    width: 0%;
+    transition: width 2s ease;
+}
+
 /* ========== SAFARI BROWSER ========== */
 .safari-window {
     width: 800px;
@@ -1747,5 +1863,23 @@ input:checked + .toggle-slider:before {
     .terminal-window {
         width: 95% !important;
         height: 70% !important;
+    }
+    
+    .lock-screen-content {
+        padding: 20px;
+        width: 90%;
+    }
+    
+    .time-display h1 {
+        font-size: 3rem;
+    }
+    
+    .power-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .power-btn {
+        min-width: 150px;
     }
 }
