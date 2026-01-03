@@ -1,0 +1,3 @@
+# macosWeb-
+so this is my current project status: 
+I'm still working on it ,,, so if you found any bugs or glitches, just tryna report any issue on it , I'll try to fix it ...

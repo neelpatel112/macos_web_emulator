@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS Web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SF Pro Font (Apple's font) -->
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
+</head>
+<body>
+    <!-- Lock Screen Container -->
+    <div id="lockScreen" class="screen active">
+        <div class="lock-screen-content">
+            <div class="time-display">
+                <h1 id="lockTime">00:00</h1>
+                <p id="lockDate">Monday, January 1</p>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <p class="username">Guest User</p>
+            </div>
+            <div class="unlock-hint">
+                <p>Click or press any key to unlock</p>
+                <div class="password-field">
+                    <input type="password" placeholder="Enter password" id="lockPassword">
+                    <button id="unlockBtn"><i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Interface -->
+    <div id="desktop" class="screen">
+        <!-- Menu Bar -->
+        <div class="menu-bar">
+            <div class="apple-menu">
+                <span></span>
+            </div>
+            <div class="menu-items">
+                <span class="menu-item">Finder</span>
+                <span class="menu-item">File</span>
+                <span class="menu-item">Edit</span>
+                <span class="menu-item">View</span>
+                <span class="menu-item">Window</span>
+                <span class="menu-item">Help</span>
+            </div>
+            <div class="menu-right">
+                <div class="status-icons">
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-three-quarters"></i>
+                    <i class="fas fa-search"></i>
+                    <span id="desktopTime">00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Desktop Icons -->
+        <div class="desktop-icons">
+            <div class="desktop-icon" data-app="finder">
+                <div class="icon-img">
+                    <i class="fas fa-compass"></i>
+                </div>
+                <span class="icon-label">Finder</span>
+            </div>
+            <div class="desktop-icon" data-app="safari">
+                <div class="icon-img">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <span class="icon-label">Safari</span>
+            </div>
+            <div class="desktop-icon" data-app="notes">
+                <div class="icon-img">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <span class="icon-label">Notes</span>
+            </div>
+            <div class="desktop-icon" data-app="terminal">
+                <div class="icon-img">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <span class="icon-label">Terminal</span>
+            </div>
+        </div>
+
+        <!-- Dock -->
+        <div class="dock">
+            <div class="dock-items">
+                <div class="dock-item active" data-app="finder">
+                    <i class="fas fa-compass"></i>
+                </div>
+                <div class="dock-item" data-app="safari">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="dock-item" data-app="notes">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <div class="dock-item" data-app="terminal">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <div class="dock-separator"></div>
+                <div class="dock-item" data-app="trash">
+                    <i class="fas fa-trash"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Windows Container -->
+        <div id="windowsContainer"></div>
+    </div>
+<!-- Right-click Context Menu -->
+<div id="contextMenu" class="context-menu">
+    <div class="menu-item" data-action="new-folder"><i class="fas fa-folder-plus"></i> New Folder</div>
+    <div class="menu-item" data-action="get-info"><i class="fas fa-info-circle"></i> Get Info</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="copy"><i class="fas fa-copy"></i> Copy</div>
+    <div class="menu-item" data-action="paste"><i class="fas fa-paste"></i> Paste</div>
+    <div class="menu-item" data-action="duplicate"><i class="fas fa-clone"></i> Duplicate</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" data-action="move-to-trash"><i class="fas fa-trash"></i> Move to Trash</div>
+</div>
+
+<!-- Notification Center -->
+<div id="notificationCenter" class="notification-center">
+    <div class="notification-header">
+        <h3>Notifications</h3>
+        <button id="closeNotifications"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="notifications-list">
+        <!-- Notifications will appear here -->
+    </div>
+</div>
+
+<!-- Trash Window -->
+<div id="trashWindow" class="app-window" style="display: none;">
+    <div class="window-titlebar">
+        <div class="window-controls">
+            <div class="window-control close" data-window="trash"></div>
+            <div class="window-control minimize" data-window="trash"></div>
+            <div class="window-control expand" data-window="trash"></div>
+        </div>
+        <div class="window-title">Trash</div>
+    </div>
+    <div class="window-content finder-content">
+        <div class="finder-sidebar">
+            <div class="sidebar-section">
+                <h4>Favorites</h4>
+                <div class="sidebar-item active"><i class="fas fa-trash"></i> Trash</div>
+                <div class="sidebar-item"><i class="fas fa-desktop"></i> Desktop</div>
+                <div class="sidebar-item"><i class="fas fa-download"></i> Downloads</div>
+                <div class="sidebar-item"><i class="fas fa-user"></i> Documents</div>
+            </div>
+        </div>
+        <div class="finder-main">
+            <div class="finder-toolbar">
+                <div class="finder-actions">
+                    <button class="finder-btn" id="emptyTrash"><i class="fas fa-trash"></i> Empty Trash</button>
+                    <button class="finder-btn" id="restoreItem"><i class="fas fa-undo"></i> Restore</button>
+                </div>
+            </div>
+            <div class="finder-files" id="trashContents">
+                <p class="empty-trash">Trash is empty</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Mission Control Overlay -->
+<div id="missionControl" class="mission-control">
+    <div class="mission-header">
+        <h2>Mission Control</h2>
+        <div class="mission-controls">
+            <button id="exitMission"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+    <div class="desktops-container">
+        <div class="desktop-space active" data-desktop="1">
+            <div class="desktop-label">Desktop 1</div>
+            <div class="windows-preview">
+                <!-- Windows will be dynamically added here -->
+            </div>
+        </div>
+        <div class="desktop-space" data-desktop="2">
+            <div class="desktop-label">Desktop 2</div>
+            <div class="add-desktop">+</div>
+        </div>
+    </div>
+    <div class="dock-preview">
+        <!-- Dock will be mirrored here -->
+    </div>
+</div>
+
+<!-- Launchpad -->
+<div id="launchpad" class="launchpad">
+    <div class="launchpad-header">
+        <input type="text" placeholder="Search Applications..." class="launchpad-search">
+        <button id="exitLaunchpad"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="app-grid">
+        <!-- Apps will be dynamically added -->
+    </div>
+    <div class="launchpad-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    </div>
+</div>
+
+<!-- Spotlight Search -->
+<div id="spotlight" class="spotlight">
+    <div class="spotlight-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Spotlight Search" id="spotlightInput">
+        <button id="closeSpotlight"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="spotlight-results">
+        <div class="result-category">
+            <h4>Applications</h4>
+            <div class="result-items">
+                <!-- Results will appear here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Preferences Window -->
+<div id="preferencesWindow" class="app-window" style="display: none;">
+    <div class="window-titlebar">
+        <div class="window-controls">
+            <div class="window-control close" data-window="preferences"></div>
+            <div class="window-control minimize" data-window="preferences"></div>
+            <div class="window-control expand" data-window="preferences"></div>
+        </div>
+        <div class="window-title">System Preferences</div>
+    </div>
+    <div class="window-content preferences-content">
+        <div class="preferences-sidebar">
+            <div class="sidebar-item active" data-pref="general">
+                <i class="fas fa-sliders-h"></i> General
+            </div>
+            <div class="sidebar-item" data-pref="desktop">
+                <i class="fas fa-desktop"></i> Desktop & Dock
+            </div>
+            <div class="sidebar-item" data-pref="notifications">
+                <i class="fas fa-bell"></i> Notifications
+            </div>
+            <div class="sidebar-item" data-pref="users">
+                <i class="fas fa-users"></i> Users & Groups
+            </div>
+        </div>
+        <div class="preferences-main" id="preferencesPanel">
+            <!-- Settings panels will load here -->
+        </div>
+    </div>
+</div>
+<!-- Safari Browser Window -->
+<div id="safariWindow" class="app-window safari-window" style="display: none;">
+    <div class="window-titlebar">
+        <div class="window-controls">
+            <div class="window-control close" data-window="safari"></div>
+            <div class="window-control minimize" data-window="safari"></div>
+            <div class="window-control expand" data-window="safari"></div>
+        </div>
+        <div class="safari-nav">
+            <div class="nav-buttons">
+                <button class="nav-btn" id="safariBack"><i class="fas fa-chevron-left"></i></button>
+                <button class="nav-btn" id="safariForward"><i class="fas fa-chevron-right"></i></button>
+                <button class="nav-btn" id="safariReload"><i class="fas fa-redo"></i></button>
+            </div>
+            <div class="url-bar">
+                <i class="fas fa-lock"></i>
+                <input type="text" id="safariUrl" value="https://www.apple.com" placeholder="Search or enter website name">
+                <button class="share-btn"><i class="fas fa-share"></i></button>
+            </div>
+            <div class="nav-actions">
+                <button class="nav-btn"><i class="fas fa-plus"></i></button>
+                <button class="nav-btn"><i class="fas fa-th"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="window-content safari-content">
+        <div class="safari-tabs">
+            <div class="tab active" data-tab="apple">
+                <span>Apple</span>
+                <button class="tab-close">&times;</button>
+            </div>
+            <div class="tab" data-tab="new">
+                <span>+</span>
+            </div>
+        </div>
+        <div class="safari-page active" id="tab-apple">
+            <div class="bookmarks-bar">
+                <a href="#" class="bookmark" data-url="https://www.apple.com">Apple</a>
+                <a href="#" class="bookmark" data-url="https://www.google.com">Google</a>
+                <a href="#" class="bookmark" data-url="https://www.github.com">GitHub</a>
+                <a href="#" class="bookmark" data-url="https://www.youtube.com">YouTube</a>
+                <a href="#" class="bookmark" data-url="https://www.twitter.com">Twitter</a>
+            </div>
+            <div class="webpage-preview">
+                <div class="webpage-header">
+                    <div class="favicon"></div>
+                    <div class="webpage-info">
+                        <div class="webpage-title">Apple</div>
+                        <div class="webpage-url">https://www.apple.com</div>
+                    </div>
+                </div>
+                <div class="webpage-content">
+                    <h2>Welcome to Safari</h2>
+                    <p>This is a simulated Safari browser within macOS Web.</p>
+                    <p>You can navigate between bookmarks and simulate browsing.</p>
+                    <div class="demo-content">
+                        <div class="content-grid">
+                            <div class="content-item">
+                                <div class="item-img" style="background: #ff3b30;"></div>
+                                <h4>iPhone 15 Pro</h4>
+                                <p>Titanium. So strong. So light. So Pro.</p>
+                            </div>
+                            <div class="content-item">
+                                <div class="item-img" style="background: #007aff;"></div>
+                                <h4>MacBook Air</h4>
+                                <p>Lean. Mean. M3 machine.</p>
+                            </div>
+                            <div class="content-item">
+                                <div class="item-img" style="background: #34c759;"></div>
+                                <h4>Apple Watch</h4>
+                                <p>Smarter. Brighter. Mightier.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="safari-page" id="tab-new">
+            <div class="new-tab-page">
+                <div class="ntp-logo">S</div>
+                <h2>Safari</h2>
+                <div class="frequent-sites">
+                    <div class="site" data-url="https://www.apple.com">
+                        <div class="site-icon"></div>
+                        <span>Apple</span>
+                    </div>
+                    <div class="site" data-url="https://www.google.com">
+                        <div class="site-icon">G</div>
+                        <span>Google</span>
+                    </div>
+                    <div class="site" data-url="https://www.github.com">
+                        <div class="site-icon"><i class="fab fa-github"></i></div>
+                        <span>GitHub</span>
+                    </div>
+                    <div class="site" data-url="https://www.youtube.com">
+                        <div class="site-icon"><i class="fab fa-youtube"></i></div>
+                        <span>YouTube</span>
+                    </div>
+                </div>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search with Google or enter address">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Music App Window -->
+<div id="musicWindow" class="app-window music-window" style="display: none;">
+    <div class="window-titlebar">
+        <div class="window-controls">
+            <div class="window-control close" data-window="music"></div>
+            <div class="window-control minimize" data-window="music"></div>
+            <div class="window-control expand" data-window="music"></div>
+        </div>
+        <div class="window-title">Music</div>
+    </div>
+    <div class="window-content music-content">
+        <div class="music-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-item active"><i class="fas fa-music"></i> Listen Now</div>
+                <div class="sidebar-item"><i class="fas fa-compass"></i> Browse</div>
+                <div class="sidebar-item"><i class="fas fa-radio"></i> Radio</div>
+                <div class="sidebar-item"><i class="fas fa-music"></i> Library</div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-item"><i class="fas fa-plus-circle"></i> Create Playlist</div>
+                <div class="sidebar-item"><i class="fas fa-heart"></i> Liked Songs</div>
+            </div>
+        </div>
+        <div class="music-main">
+            <div class="music-header">
+                <h2>Listen Now</h2>
+                <div class="music-controls">
+                    <button class="music-btn"><i class="fas fa-random"></i> Shuffle</button>
+                    <button class="music-btn"><i class="fas fa-play"></i> Play All</button>
+                </div>
+            </div>
+            <div class="music-grid">
+                <div class="music-card" data-song="1">
+                    <div class="album-art" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <h4>Midnight City</h4>
+                    <p>M83 · 2011</p>
+                </div>
+                <div class="music-card" data-song="2">
+                    <div class="album-art" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <h4>Blinding Lights</h4>
+                    <p>The Weeknd · 2020</p>
+                </div>
+                <div class="music-card" data-song="3">
+                    <div class="album-art" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <h4>Shape of You</h4>
+                    <p>Ed Sheeran · 2017</p>
+                </div>
+                <div class="music-card" data-song="4">
+                    <div class="album-art" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <h4>Levitating</h4>
+                    <p>Dua Lipa · 2020</p>
+                </div>
+            </div>
+            <div class="now-playing">
+                <div class="np-album">
+                    <div class="album-art-large" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                </div>
+                <div class="np-info">
+                    <h3>Midnight City</h3>
+                    <p>M83 · Hurry Up, We're Dreaming</p>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-display">
+                        <span>1:24</span>
+                        <span>4:04</span>
+                    </div>
+                    <div class="player-controls">
+                        <button><i class="fas fa-step-backward"></i></button>
+                        <button class="play-btn"><i class="fas fa-play"></i></button>
+                        <button><i class="fas fa-step-forward"></i></button>
+                        <button><i class="fas fa-volume-up"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calculator App -->
+<div id="calculatorWindow" class="app-window calculator-window" style="display: none;">
+    <div class="window-titlebar">
+        <div class="window-controls">
+            <div class="window-control close" data-window="calculator"></div>
+            <div class="window-control minimize" data-window="calculator"></div>
+            <div class="window-control expand" data-window="calculator"></div>
+        </div>
+        <div class="window-title">Calculator</div>
+    </div>
+    <div class="window-content calculator-content">
+        <div class="calculator-display">
+            <div class="calc-history"></div>
+            <div class="calc-current">0</div>
+        </div>
+        <div class="calculator-buttons">
+            <button class="calc-btn function">C</button>
+            <button class="calc-btn function">±</button>
+            <button class="calc-btn function">%</button>
+            <button class="calc-btn operator">÷</button>
+            
+            <button class="calc-btn">7</button>
+            <button class="calc-btn">8</button>
+            <button class="calc-btn">9</button>
+            <button class="calc-btn operator">×</button>
+            
+            <button class="calc-btn">4</button>
+            <button class="calc-btn">5</button>
+            <button class="calc-btn">6</button>
+            <button class="calc-btn operator">−</button>
+            
+            <button class="calc-btn">1</button>
+            <button class="calc-btn">2</button>
+            <button class="calc-btn">3</button>
+            <button class="calc-btn operator">+</button>
+            
+            <button class="calc-btn zero">0</button>
+            <button class="calc-btn">.</button>
+            <button class="calc-btn equals">=</button>
+        </div>
+    </div>
+</div>
+
+<!-- Terminal App -->
+<div id="terminalWindow" class="app-window terminal-window" style="display: none;">
+    <div class="window-titlebar">
+        <div class="window-controls">
+            <div class="window-control close" data-window="terminal"></div>
+            <div class="window-control minimize" data-window="terminal"></div>
+            <div class="window-control expand" data-window="terminal"></div>
+        </div>
+        <div class="window-title">Terminal</div>
+    </div>
+    <div class="window-content terminal-content">
+        <div class="terminal-header">
+            <div class="terminal-tab active">bash</div>
+            <div class="terminal-tab">zsh</div>
+            <div class="terminal-tab">+</div>
+        </div>
+        <div class="terminal-body">
+            <div class="terminal-output">
+                <div class="output-line">Last login: Fri Jan 1 00:00:00 on ttys000</div>
+                <div class="output-line">macOS-Web:~ guest$ <span class="cursor">_</span></div>
+            </div>
+            <div class="terminal-input">
+                <span class="prompt">macOS-Web:~ guest$</span>
+                <input type="text" id="terminalInput" autocomplete="off">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Sound Player (hidden) -->
+<audio id="soundPlayer" preload="auto"></audio>
+
+<!-- Sound Test Modal -->
+<div id="soundTestModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Test System Sounds</h3>
+        <div class="sound-test-buttons">
+            <button class="sound-test-btn" data-sound="login">
+                <i class="fas fa-power-off"></i> Login Sound
+            </button>
+            <button class="sound-test-btn" data-sound="click">
+                <i class="fas fa-mouse-pointer"></i> Click Sound
+            </button>
+            <button class="sound-test-btn" data-sound="notification">
+                <i class="fas fa-bell"></i> Notification
+            </button>
+            <button class="sound-test-btn" data-sound="window">
+                <i class="fas fa-window-restore"></i> Window Open
+            </button>
+            <button class="sound-test-btn" data-sound="error">
+                <i class="fas fa-exclamation-triangle"></i> Error
+            </button>
+            <button class="sound-test-btn" data-sound="trash">
+                <i class="fas fa-trash"></i> Empty Trash
+            </button>
+            <button class="sound-test-btn" data-sound="mission">
+                <i class="fas fa-th-large"></i> Mission Control
+            </button>
+        </div>
+        <div class="modal-actions">
+            <button id="closeSoundTest">Close</button>
+        </div>
+    </div>
+</div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
