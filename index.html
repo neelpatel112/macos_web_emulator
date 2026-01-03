@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>macOS Web by Neel Patel</title>
     <meta name="author" content="Neel Patel">
-    <meta name="copyright" content="© 2024 Neel Patel. All rights reserved.">
+    <meta name="copyright" content="© 2026 Neel Patel. All rights reserved.">
     
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,18 +29,27 @@
         <!-- Dynamic Wallpaper -->
         <div class="dynamic-wallpaper"></div>
         
-        <!-- Top Info Bar -->
-        <div class="lock-screen-top-bar">
-            <div class="lock-time-small" id="lockTimeSmall">00:00</div>
-            <div class="lock-date-small" id="lockDateSmall">Monday, January 1</div>
+        <!-- Top Status Bar (WiFi, Battery, etc.) -->
+        <div class="lock-screen-status-bar">
+            <div class="status-left">
+                <!-- Carrier/Time will be here -->
+            </div>
+            <div class="status-center">
+                <div class="lock-time-small" id="lockTimeSmall">10:24 PM</div>
+            </div>
+            <div class="status-right">
+                <i class="fas fa-wifi"></i>
+                <i class="fas fa-battery-three-quarters"></i>
+                <span id="lockDateSmall">Sat Jan 3</span>
+            </div>
         </div>
         
         <!-- Main Content -->
         <div class="lock-screen-content">
-            <!-- Time Display -->
+            <!-- Time Display (Main) -->
             <div class="time-display">
-                <h1 id="lockTime">00:00</h1>
-                <p id="lockDate">Monday, January 1</p>
+                <h1 id="lockTime">10:24</h1>
+                <p id="lockDate">Saturday, January 3</p>
             </div>
             
             <!-- User Profile -->
@@ -81,29 +90,26 @@
                     <i class="fas fa-camera"></i>
                 </button>
             </div>
-            
-            <!-- Bottom Power Controls -->
-            <div class="lock-screen-bottom-controls">
-                <button class="control-btn" id="lockSleepBtn" title="Sleep">
-                    <i class="fas fa-moon"></i>
-                    <span>Sleep</span>
-                </button>
-                <button class="control-btn" id="lockRestartBtn" title="Restart">
-                    <i class="fas fa-redo"></i>
-                    <span>Restart</span>
-                </button>
-                <button class="control-btn" id="lockShutdownBtn" title="Shut Down">
-                    <i class="fas fa-power-off"></i>
-                    <span>Shut Down</span>
-                </button>
-            </div>
-            
-            <!-- Emergency SOS -->
-            <div class="emergency-sos">
-                <button id="emergencySOS" class="sos-btn">
-                    Emergency SOS
-                </button>
-            </div>
+        </div>
+        
+        <!-- Bottom Power Controls (Icons Only) -->
+        <div class="lock-screen-power-controls">
+            <button class="power-icon-btn" id="lockSleepBtn" title="Sleep">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="power-icon-btn" id="lockRestartBtn" title="Restart">
+                <i class="fas fa-redo"></i>
+            </button>
+            <button class="power-icon-btn" id="lockShutdownBtn" title="Shut Down">
+                <i class="fas fa-power-off"></i>
+            </button>
+        </div>
+        
+        <!-- Emergency SOS (Bottom Left) -->
+        <div class="emergency-sos">
+            <button id="emergencySOS" class="sos-btn">
+                <i class="fas fa-plus-circle"></i>
+            </button>
         </div>
         
         <!-- Touch ID / Face ID Indicator -->
@@ -517,12 +523,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Audio Elements -->
-    <audio id="startupSound" preload="auto"></audio>
-    <audio id="unlockSound" preload="auto"></audio>
-    <audio id="lockSound" preload="auto"></audio>
-    <audio id="musicPlayer" preload="auto"></audio>
 
     <!-- Scripts -->
     <script src="js/lockScreen.js"></script>
