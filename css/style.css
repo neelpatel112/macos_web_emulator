@@ -12,6 +12,7 @@ body {
     overflow: hidden;
     height: 100vh;
     width: 100vw;
+    position: relative;
 }
 
 /* ========== SCREENS ========== */
@@ -30,155 +31,485 @@ body {
 
 /* ========== LOCK SCREEN ========== */
 #lockScreen {
-    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                url('https://images.unsplash.com/photo-1541701494587-cb58502866ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-    background-size: cover;
-    background-position: center;
+    background: #000;
     color: white;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.5s ease;
+    justify-content: space-between;
+    overflow: hidden;
+    z-index: 10000;
 }
 
+.lock-screen-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(20, 20, 40, 0.9) 50%,
+        rgba(0, 0, 0, 0.8) 100%);
+    z-index: 1;
+}
+
+.dynamic-wallpaper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+    animation: wallpaperPulse 15s ease-in-out infinite alternate;
+    z-index: 0;
+}
+
+@keyframes wallpaperPulse {
+    0% { opacity: 0.3; }
+    100% { opacity: 0.7; }
+}
+
+/* Top Info Bar */
+.lock-screen-top-bar {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    z-index: 2;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.lock-time-small {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+}
+
+.lock-date-small {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-weight: 300;
+}
+
+/* Main Content */
 .lock-screen-content {
-    text-align: center;
-    transform: translateY(-50px);
-    backdrop-filter: blur(10px);
-    padding: 40px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
-    min-width: 400px;
+    z-index: 2;
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 100px;
+}
+
+/* Time Display */
+.time-display {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: timeFadeIn 1s ease-out;
+}
+
+@keyframes timeFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .time-display h1 {
-    font-size: 5rem;
+    font-size: 5.5rem;
     font-weight: 200;
-    letter-spacing: -2px;
+    letter-spacing: -2.5px;
     margin-bottom: 10px;
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .time-display p {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     opacity: 0.9;
-    margin-bottom: 40px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
 }
 
+/* User Profile */
 .user-profile {
     margin-bottom: 40px;
+    animation: profileFadeIn 1s ease-out 0.2s both;
+}
+
+@keyframes profileFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .avatar {
-    width: 100px;
-    height: 100px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 15px;
+    position: relative;
+}
+
+.avatar-inner {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 15px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: white;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.1);
+    animation: avatarGlow 3s ease-in-out infinite alternate;
 }
 
-.avatar i {
-    font-size: 2.5rem;
+@keyframes avatarGlow {
+    0% { 
+        box-shadow: 
+            0 15px 35px rgba(0, 0, 0, 0.4),
+            inset 0 0 40px rgba(255, 255, 255, 0.1),
+            0 0 20px rgba(102, 126, 234, 0.2);
+    }
+    100% { 
+        box-shadow: 
+            0 15px 35px rgba(0, 0, 0, 0.4),
+            inset 0 0 40px rgba(255, 255, 255, 0.1),
+            0 0 40px rgba(118, 75, 162, 0.4);
+    }
 }
 
 .username {
     font-size: 1.8rem;
-    font-weight: 500;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    font-weight: 400;
+    text-align: center;
+    text-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
 }
 
-.unlock-hint p {
-    margin-bottom: 15px;
-    font-size: 1rem;
-    opacity: 0.8;
+/* Password Field */
+.password-container {
+    width: 100%;
+    animation: passwordFadeIn 1s ease-out 0.4s both;
+}
+
+@keyframes passwordFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .password-field {
     display: flex;
-    justify-content: center;
     gap: 10px;
     margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 15px;
+    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
 }
 
-.password-field input {
+.password-field:focus-within {
     background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    padding: 12px 20px;
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+#lockPassword {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 15px 20px;
     color: white;
     font-size: 1rem;
-    width: 250px;
-    backdrop-filter: blur(10px);
     outline: none;
-    transition: all 0.3s;
+    font-weight: 300;
+    letter-spacing: 1px;
 }
 
-.password-field input:focus {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.5);
-}
-
-.password-field input::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+#lockPassword::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 300;
 }
 
 #unlockBtn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    color: white;
     width: 50px;
-    cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(10px);
-}
-
-#unlockBtn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-}
-
-.password-note {
-    font-size: 0.8rem;
-    opacity: 0.6;
-    margin-top: 10px;
-}
-
-/* Power buttons on lock screen */
-.lock-screen-power {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    display: flex;
-    gap: 15px;
-}
-
-.power-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
+    background: linear-gradient(135deg, #007aff 0%, #0056cc 100%);
+    border: none;
+    border-radius: 12px;
     color: white;
     cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    transition: all 0.3s;
-    backdrop-filter: blur(10px);
 }
 
-.power-icon:hover {
+#unlockBtn:hover {
+    background: linear-gradient(135deg, #0056cc 0%, #004099 100%);
+    transform: translateX(2px);
+}
+
+.password-hint {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    text-align: center;
+    margin-bottom: 5px;
+    font-weight: 300;
+}
+
+.password-note {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    text-align: center;
+    font-weight: 300;
+}
+
+/* Quick Actions */
+.lock-screen-quick-actions {
+    display: flex;
+    gap: 30px;
+    margin: 30px 0;
+    animation: actionsFadeIn 1s ease-out 0.6s both;
+}
+
+@keyframes actionsFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.quick-action {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-action:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Bottom Controls */
+.lock-screen-bottom-controls {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 0 20px;
+    z-index: 2;
+    animation: controlsFadeIn 1s ease-out 0.8s both;
+}
+
+@keyframes controlsFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 300;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn i {
+    font-size: 1rem;
+}
+
+/* Emergency SOS */
+.emergency-sos {
+    position: absolute;
+    bottom: 100px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 2;
+}
+
+.sos-btn {
+    background: rgba(255, 59, 48, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    border-radius: 20px;
+    padding: 10px 25px;
+    color: #ff3b30;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.sos-btn:hover {
+    background: rgba(255, 59, 48, 0.3);
+    border-color: rgba(255, 59, 48, 0.5);
+}
+
+/* Biometric Indicator */
+.biometric-indicator {
+    position: absolute;
+    bottom: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.7;
+    animation: biometricPulse 2s ease-in-out infinite;
+    cursor: pointer;
+}
+
+@keyframes biometricPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+.biometric-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #34c759;
+    border: 2px solid rgba(52, 199, 89, 0.3);
+}
+
+.biometric-text {
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Password Error Animation */
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.password-error {
+    animation: shakeError 0.5s ease-in-out;
+    border-color: #ff3b30 !important;
+    background: rgba(255, 59, 48, 0.1) !important;
+}
+
+/* Screen Sleep Effect */
+.screen-sleep {
+    animation: sleepFade 0.5s ease-out forwards;
+}
+
+@keyframes sleepFade {
+    to { opacity: 0; }
+}
+
+/* Wake Up Effect */
+.wake-up {
+    animation: wakeUpFade 0.5s ease-out forwards;
+}
+
+@keyframes wakeUpFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Desktop Fade Effect */
+.desktop-fade-in {
+    animation: desktopFadeIn 1s ease-out forwards;
+}
+
+@keyframes desktopFadeIn {
+    from { 
+        opacity: 0; 
+        transform: scale(1.02);
+        filter: blur(10px);
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Unlock Animation */
+.unlock-animation {
+    animation: unlockEffect 1s ease-out forwards;
+}
+
+@keyframes unlockEffect {
+    0% { 
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.05);
+        filter: blur(5px);
+    }
+    100% { 
+        opacity: 0;
+        transform: scale(1.1);
+        filter: blur(10px);
+        display: none;
+    }
+}
+
+/* Emergency Pulse */
+@keyframes emergencyPulse {
+    0% { background-color: rgba(255, 59, 48, 0.1); }
+    100% { background-color: rgba(255, 59, 48, 0.3); }
 }
 
 /* ========== DESKTOP ========== */
@@ -1253,15 +1584,80 @@ body {
     }
     
     .lock-screen-content {
-        min-width: 90%;
-        padding: 20px;
+        max-width: 90%;
+        margin-top: 50px;
     }
     
     .time-display h1 {
         font-size: 3rem;
     }
     
+    .time-display p {
+        font-size: 1.2rem;
+    }
+    
+    .avatar {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .username {
+        font-size: 1.5rem;
+    }
+    
+    .lock-screen-quick-actions {
+        gap: 20px;
+    }
+    
+    .quick-action {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .lock-screen-bottom-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        bottom: 20px;
+    }
+    
+    .control-btn {
+        min-width: 200px;
+        justify-content: center;
+    }
+    
+    .biometric-indicator {
+        bottom: 150px;
+    }
+    
     .spotlight {
         width: 90%;
+    }
+}
+
+@media (max-height: 700px) {
+    .lock-screen-content {
+        margin-top: 30px;
+    }
+    
+    .time-display {
+        margin-bottom: 20px;
+    }
+    
+    .time-display h1 {
+        font-size: 3.5rem;
+    }
+    
+    .user-profile {
+        margin-bottom: 20px;
+    }
+    
+    .avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .lock-screen-quick-actions {
+        margin: 20px 0;
     }
 }
