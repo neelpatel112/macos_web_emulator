@@ -971,3 +971,721 @@ window.playSound = playSound;
 window.showShutdownModal = showShutdownModal;
 window.showRestartModal = showRestartModal;
 window.showSleep = showSleep;
+
+// ========== DATABASE INTEGRATION ==========
+
+// Initialize database connection
+console.log('🔗 Connecting apps to database...');
+
+// Update dock indicator to use database
+function updateDockIndicatorFromDatabase(appName, isRunning) {
+    const dockItem = document.querySelector(`.dock-item[data-app="${appName}"]`);
+    if (dockItem) {
+        if (isRunning) {
+            dockItem.classList.add('running');
+            // Add to running apps in database
+            macOSDatabase.addRunningApp(appName);
+        } else {
+            dockItem.classList.remove('running');
+            // Remove from running apps in database
+            macOSDatabase.removeRunningApp(appName);
+        }
+    }
+}
+
+// ========== ENHANCED CALCULATOR ==========
+function setupCalculator() {
+    const calculatorWindow = document.getElementById('calculatorWindow');
+    if (!calculatorWindow) return;
+    
+    const display = calculatorWindow.querySelector('.calc-current');
+    const buttons = calculatorWindow.querySelectorAll('.calc-btn');
+    
+    let currentInput = '0';
+    let previousInput = '';
+    let operation = null;
+    let shouldResetScreen = false;
+    
+    // Load history from database
+    function loadCalculatorHistory() {
+        const history = macOSDatabase.getCalculatorHistory();
+        console.log('📊 Loaded calculator history:', history.length, 'calculations');
+        
+        // Optional: Display history in calculator
+        // You can add a history panel later
+    }
+    
+    // Update display
+    function updateDisplay() {
+        display.textContent = currentInput;
+    }
+    
+    // Calculate result
+    function calculate(prev, current, op) {
+        const prevNum = parseFloat(prev);
+        const currentNum = parseFloat(current);
+        
+        switch(op) {
+            case '+': return prevNum + currentNum;
+            case '-': return prevNum - currentNum;
+            case '×': return prevNum * currentNum;
+            case '÷': return currentNum !== 0 ? prevNum / currentNum : 'Error';
+            default: return currentNum;
+        }
+    }
+    
+    // Handle button click
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const value = this.textContent;
+            playSound('click');
+            
+            if (value >= '0' && value <= '9') {
+                // Number input
+                if (currentInput === '0' || shouldResetScreen) {
+                    currentInput = value;
+                    shouldResetScreen = false;
+                } else {
+                    currentInput += value;
+                }
+            } 
+            else if (value === '.') {
+                // Decimal point
+                if (!currentInput.includes('.')) {
+                    currentInput += '.';
+                }
+            }
+            else if (value === 'C' || value === 'CE') {
+                // Clear
+                currentInput = '0';
+                previousInput = '';
+                operation = null;
+            }
+            else if (value === '=') {
+                // Calculate
+                if (operation && previousInput) {
+                    const result = calculate(previousInput, currentInput, operation);
+                    
+                    // Save to database BEFORE updating display
+                    macOSDatabase.addCalculation(`${previousInput} ${operation} ${currentInput}`, result.toString());
+                    
+                    currentInput = result.toString();
+                    previousInput = '';
+                    operation = null;
+                    shouldResetScreen = true;
+                    
+                    // Load updated history
+                    loadCalculatorHistory();
+                }
+            }
+            else {
+                // Operation (+, -, ×, ÷)
+                if (currentInput !== '0') {
+                    if (previousInput && operation) {
+                        // Chain calculations
+                        const result = calculate(previousInput, currentInput, operation);
+                        macOSDatabase.addCalculation(`${previousInput} ${operation} ${currentInput}`, result.toString());
+                        previousInput = result.toString();
+                    } else {
+                        previousInput = currentInput;
+                    }
+                    
+                    operation = value;
+                    currentInput = '0';
+                    shouldResetScreen = true;
+                }
+            }
+            
+            updateDisplay();
+        });
+    });
+    
+    // Load history on calculator open
+    loadCalculatorHistory();
+    
+    console.log('🧮 Calculator connected to database');
+}
+
+// ========== ENHANCED MUSIC PLAYER ==========
+function setupMusicPlayer() {
+    const musicWindow = document.getElementById('musicWindow');
+    if (!musicWindow) return;
+    
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const songItems = document.querySelectorAll('.song-item');
+    const currentSongTitle = document.getElementById('currentSongTitle');
+    const currentSongArtist = document.getElementById('currentSongArtist');
+    
+    // Audio element
+    const audioPlayer = document.getElementById('musicPlayer');
+    if (!audioPlayer) {
+        console.error('Music player audio element not found');
+        return;
+    }
+    
+    let currentSong = null;
+    let isPlaying = false;
+    let currentPlaylist = null;
+    let currentSongIndex = 0;
+    
+    // Load music library from database
+    function loadMusicLibrary() {
+        const library = macOSDatabase.getMusicLibrary();
+        if (!library) {
+            console.error('Music library not found in database');
+            return;
+        }
+        
+        currentPlaylist = library.playlists.default;
+        console.log('🎵 Loaded music library:', currentPlaylist.songs.length, 'songs');
+        
+        // Update UI with songs from database
+        updateSongList();
+    }
+    
+    // Update song list UI
+    function updateSongList() {
+        const songListContainer = document.querySelector('.song-list');
+        if (!songListContainer || !currentPlaylist) return;
+        
+        // Clear existing items (keep first two demo songs)
+        const existingItems = songListContainer.querySelectorAll('.song-item');
+        if (existingItems.length > 2) {
+            for (let i = 2; i < existingItems.length; i++) {
+                existingItems[i].remove();
+            }
+        }
+        
+        // Add songs from database
+        currentPlaylist.songs.forEach((song, index) => {
+            // Skip first 2 (already in HTML)
+            if (index >= 2) {
+                const songItem = document.createElement('div');
+                songItem.className = 'song-item';
+                songItem.setAttribute('data-song', song.id);
+                songItem.innerHTML = `
+                    <i class="fas fa-music"></i>
+                    <span>${song.title} - ${song.artist}</span>
+                `;
+                
+                songItem.addEventListener('click', () => {
+                    playSong(song.id);
+                    playSound('click');
+                });
+                
+                songListContainer.appendChild(songItem);
+            }
+        });
+    }
+    
+    // Play song
+    function playSong(songId) {
+        const song = currentPlaylist.songs.find(s => s.id === songId);
+        if (!song) {
+            console.error('Song not found:', songId);
+            return;
+        }
+        
+        currentSong = song;
+        currentSongIndex = currentPlaylist.songs.findIndex(s => s.id === songId);
+        
+        // Update UI
+        currentSongTitle.textContent = song.title;
+        currentSongArtist.textContent = song.artist;
+        
+        // Update play button
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+        
+        // Set audio source
+        audioPlayer.src = song.url;
+        
+        // Play audio
+        audioPlayer.play()
+            .then(() => {
+                isPlaying = true;
+                
+                // Add to recently played in database
+                macOSDatabase.addToRecentlyPlayed(songId);
+                
+                // Show notification
+                showNotification('Now Playing', `${song.title} - ${song.artist}`);
+                
+                console.log('🎶 Playing:', song.title);
+            })
+            .catch(error => {
+                console.error('Audio play error:', error);
+                showNotification('Playback Error', 'Cannot play audio in this browser');
+            });
+    }
+    
+    // Toggle play/pause
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', function() {
+            if (!currentSong) {
+                // Play first song if none is playing
+                if (currentPlaylist && currentPlaylist.songs.length > 0) {
+                    playSong(currentPlaylist.songs[0].id);
+                }
+            } else {
+                if (isPlaying) {
+                    audioPlayer.pause();
+                    this.innerHTML = '<i class="fas fa-play"></i>';
+                    isPlaying = false;
+                } else {
+                    audioPlayer.play();
+                    this.innerHTML = '<i class="fas fa-pause"></i>';
+                    isPlaying = true;
+                }
+            }
+            playSound('click');
+        });
+    }
+    
+    // Previous button
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            if (currentPlaylist && currentPlaylist.songs.length > 0) {
+                const newIndex = (currentSongIndex - 1 + currentPlaylist.songs.length) % currentPlaylist.songs.length;
+                playSong(currentPlaylist.songs[newIndex].id);
+            }
+            playSound('click');
+        });
+    }
+    
+    // Next button
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            if (currentPlaylist && currentPlaylist.songs.length > 0) {
+                const newIndex = (currentSongIndex + 1) % currentPlaylist.songs.length;
+                playSong(currentPlaylist.songs[newIndex].id);
+            }
+            playSound('click');
+        });
+    }
+    
+    // Song items click
+    songItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const songId = this.getAttribute('data-song');
+            playSong(songId);
+            playSound('click');
+        });
+    });
+    
+    // Audio event listeners
+    audioPlayer.addEventListener('ended', function() {
+        // Auto-play next song
+        if (currentPlaylist && currentPlaylist.songs.length > 0) {
+            const newIndex = (currentSongIndex + 1) % currentPlaylist.songs.length;
+            playSong(currentPlaylist.songs[newIndex].id);
+        }
+    });
+    
+    // Load library on music player open
+    loadMusicLibrary();
+    
+    console.log('🎵 Music player connected to database');
+}
+
+// ========== ENHANCED TERMINAL ==========
+function setupTerminal() {
+    const terminalWindow = document.getElementById('terminalWindow');
+    if (!terminalWindow) return;
+    
+    const input = document.getElementById('terminalInput');
+    const output = terminalWindow.querySelector('.terminal-output');
+    
+    if (!input || !output) return;
+    
+    // Load history from database
+    function loadTerminalHistory() {
+        const history = macOSDatabase.getTerminalHistory();
+        console.log('💻 Loaded terminal history:', history.length, 'commands');
+        
+        // Clear existing output except first two lines
+        const existingLines = output.querySelectorAll('div');
+        if (existingLines.length > 2) {
+            for (let i = 2; i < existingLines.length; i++) {
+                existingLines[i].remove();
+            }
+        }
+        
+        // Add last 5 commands from history
+        history.slice(0, 5).forEach(item => {
+            const commandLine = document.createElement('div');
+            commandLine.textContent = `macOS-Web:~ neelpatel$ ${item.command}`;
+            output.appendChild(commandLine);
+            
+            const resultLine = document.createElement('div');
+            resultLine.textContent = item.output;
+            output.appendChild(resultLine);
+        });
+    }
+    
+    // Process command
+    function processCommand(command) {
+        let result = 'Command not found. Try: help, date, time, echo, clear, neel, ls, pwd, whoami';
+        
+        if (command === 'help' || command === '?') {
+            result = 'Available commands:\n' +
+                    '  help, ?          - Show this help\n' +
+                    '  date             - Show current date\n' +
+                    '  time             - Show current time\n' +
+                    '  echo [text]      - Echo text\n' +
+                    '  clear            - Clear terminal\n' +
+                    '  neel             - About creator\n' +
+                    '  ls               - List files\n' +
+                    '  pwd              - Print working directory\n' +
+                    '  whoami           - Show current user\n' +
+                    '  history          - Show command history\n' +
+                    '  calc [expression]- Calculator\n' +
+                    '  theme [dark/light]- Change theme';
+                    
+        } else if (command === 'date') {
+            result = new Date().toLocaleDateString();
+            
+        } else if (command === 'time') {
+            result = new Date().toLocaleTimeString();
+            
+        } else if (command.startsWith('echo ')) {
+            result = command.substring(5);
+            
+        } else if (command === 'clear') {
+            output.innerHTML = `
+                <div>Last login: Today on console</div>
+                <div>macOS-Web:~ neelpatel$ <span class="cursor">_</span></div>
+            `;
+            result = '';
+            
+        } else if (command === 'neel') {
+            result = 'Created by Neel Patel - macOS Web Emulator\n' +
+                    'GitHub: @neelpatel05\n' +
+                    'Version: 2.0 with Database\n' +
+                    'All data saved locally in your browser!';
+            
+        } else if (command === 'ls') {
+            const fileSystem = macOSDatabase.getFileSystem();
+            if (fileSystem && fileSystem.home && fileSystem.home.children) {
+                const folders = Object.keys(fileSystem.home.children);
+                result = folders.join('  ');
+            } else {
+                result = 'Desktop  Documents  Downloads  Applications';
+            }
+            
+        } else if (command === 'pwd') {
+            result = '/Users/neelpatel';
+            
+        } else if (command === 'whoami') {
+            const user = macOSDatabase.getUser();
+            result = user ? user.username : 'neelpatel';
+            
+        } else if (command === 'history') {
+            const history = macOSDatabase.getTerminalHistory();
+            result = history.slice(0, 10).map((item, i) => 
+                `${i + 1}. ${item.command}`
+            ).join('\n');
+            
+        } else if (command.startsWith('calc ')) {
+            const expression = command.substring(5);
+            try {
+                // Simple eval for demo (be careful in production)
+                const calcResult = eval(expression.replace(/×/g, '*').replace(/÷/g, '/'));
+                result = `${expression} = ${calcResult}`;
+                // Save to calculator history too
+                macOSDatabase.addCalculation(expression, calcResult.toString());
+            } catch (error) {
+                result = 'Calculation error';
+            }
+            
+        } else if (command.startsWith('theme ')) {
+            const theme = command.substring(6).toLowerCase();
+            if (theme === 'dark' || theme === 'light') {
+                const settings = macOSDatabase.getSystemSettings();
+                settings.theme = theme;
+                macOSDatabase.updateSystemSettings(settings);
+                result = `Theme changed to ${theme}`;
+                showNotification('Theme Updated', `Changed to ${theme} mode`);
+            } else {
+                result = 'Usage: theme [dark/light]';
+            }
+        }
+        
+        return result;
+    }
+    
+    // Handle input
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const command = this.value.trim();
+            if (command) {
+                // Add command to output
+                const commandLine = document.createElement('div');
+                commandLine.textContent = `macOS-Web:~ neelpatel$ ${command}`;
+                output.appendChild(commandLine);
+                
+                // Process command
+                const result = processCommand(command);
+                
+                // Add result to output
+                if (result) {
+                    const resultLine = document.createElement('div');
+                    resultLine.textContent = result;
+                    output.appendChild(resultLine);
+                }
+                
+                // Save to database
+                macOSDatabase.addCommand(command, result);
+                
+                // Clear input
+                this.value = '';
+                
+                // Scroll to bottom
+                output.scrollTop = output.scrollHeight;
+                
+                playSound('click');
+            }
+        }
+    });
+    
+    // Load history on terminal open
+    loadTerminalHistory();
+    
+    console.log('💻 Terminal connected to database');
+}
+
+// ========== ENHANCED FINDER ==========
+function setupFinder() {
+    const finderWindow = document.getElementById('finderWindow');
+    if (!finderWindow) return;
+    
+    const finderFiles = finderWindow.querySelector('.finder-files');
+    if (!finderFiles) return;
+    
+    // Load file system from database
+    function loadFileSystem() {
+        const fileSystem = macOSDatabase.getFileSystem();
+        if (!fileSystem || !fileSystem.home || !fileSystem.home.children) {
+            console.error('File system not found in database');
+            return;
+        }
+        
+        console.log('📁 Loaded file system from database');
+        
+        // Clear existing files (keep the first 3 demo folders)
+        const existingFiles = finderFiles.querySelectorAll('.finder-file');
+        if (existingFiles.length > 3) {
+            for (let i = 3; i < existingFiles.length; i++) {
+                existingFiles[i].remove();
+            }
+        }
+        
+        // Add folders from database
+        const folders = fileSystem.home.children;
+        
+        Object.entries(folders).forEach(([key, folder]) => {
+            // Skip if already exists (Applications, Documents, Downloads)
+            if (key !== 'applications' && key !== 'documents' && key !== 'downloads') {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'finder-file';
+                fileElement.innerHTML = `
+                    <i class="fas fa-folder"></i>
+                    <span>${folder.name}</span>
+                `;
+                
+                fileElement.addEventListener('click', () => {
+                    playSound('click');
+                    showNotification('Finder', `Opening ${folder.name}`);
+                });
+                
+                finderFiles.appendChild(fileElement);
+            }
+        });
+        
+        // Add "New Folder" button
+        const newFolderBtn = document.createElement('div');
+        newFolderBtn.className = 'finder-file';
+        newFolderBtn.innerHTML = `
+            <i class="fas fa-plus-circle" style="color: #007aff;"></i>
+            <span style="color: #007aff;">New Folder</span>
+        `;
+        
+        newFolderBtn.addEventListener('click', () => {
+            playSound('click');
+            createNewFolder();
+        });
+        
+        finderFiles.appendChild(newFolderBtn);
+    }
+    
+    // Create new folder
+    function createNewFolder() {
+        const folderName = prompt('Enter folder name:', 'New Folder');
+        if (folderName && folderName.trim()) {
+            const newFolder = macOSDatabase.createFolder('/Users/neelpatel/Desktop', folderName.trim());
+            
+            // Add to UI
+            const fileElement = document.createElement('div');
+            fileElement.className = 'finder-file';
+            fileElement.innerHTML = `
+                <i class="fas fa-folder" style="color: #ff9500;"></i>
+                <span>${newFolder.name}</span>
+            `;
+            
+            fileElement.addEventListener('click', () => {
+                playSound('click');
+                showNotification('Finder', `Opening ${newFolder.name}`);
+            });
+            
+            finderFiles.insertBefore(fileElement, finderFiles.lastChild);
+            
+            showNotification('Folder Created', `Created "${newFolder.name}" on Desktop`);
+        }
+    }
+    
+    // Load file system on finder open
+    loadFileSystem();
+    
+    console.log('📁 Finder connected to database');
+}
+
+// ========== ENHANCED NOTIFICATIONS ==========
+function loadNotificationsFromDatabase() {
+    const notificationCenter = document.getElementById('notificationCenter');
+    if (!notificationCenter) return;
+    
+    const notificationsList = notificationCenter.querySelector('.notifications-list');
+    if (!notificationsList) return;
+    
+    // Get notifications from database
+    const notificationData = macOSDatabase.getNotifications();
+    if (!notificationData) return;
+    
+    // Clear existing notifications (except welcome message)
+    const existingNotifications = notificationsList.querySelectorAll('.notification-item');
+    if (existingNotifications.length > 1) {
+        for (let i = 1; i < existingNotifications.length; i++) {
+            existingNotifications[i].remove();
+        }
+    }
+    
+    // Add notifications from database
+    notificationData.notifications.forEach(notification => {
+        if (notification.id !== 'notif_001') { // Skip welcome message (already in HTML)
+            const notificationElement = document.createElement('div');
+            notificationElement.className = 'notification-item';
+            if (notification.read) {
+                notificationElement.style.opacity = '0.7';
+            }
+            
+            notificationElement.innerHTML = `
+                <div class="notification-title">
+                    ${notification.title}
+                    ${notification.read ? '' : '<span style="color:#007aff; font-size:0.7em;"> ●</span>'}
+                </div>
+                <div class="notification-message">${notification.message}</div>
+                <div class="notification-time">${formatTime(notification.timestamp)}</div>
+            `;
+            
+            // Mark as read on click
+            notificationElement.addEventListener('click', () => {
+                if (!notification.read) {
+                    macOSDatabase.markAsRead(notification.id);
+                    notificationElement.style.opacity = '0.7';
+                    notificationElement.querySelector('.notification-title span').remove();
+                }
+            });
+            
+            notificationsList.appendChild(notificationElement);
+        }
+    });
+}
+
+// Helper: Format time
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+    return date.toLocaleDateString();
+}
+
+// ========== ENHANCED SYSTEM ==========
+function loadSystemSettings() {
+    const settings = macOSDatabase.getSystemSettings();
+    if (!settings) return;
+    
+    console.log('⚙️ Loaded system settings:', settings.theme);
+    
+    // Apply theme
+    if (settings.theme === 'dark') {
+        document.body.classList.add('dark-theme');
+    }
+    
+    // Apply wallpaper (simplified)
+    // In a real implementation, you would update the background
+}
+
+// ========== UPDATE EXISTING FUNCTIONS ==========
+
+// Update openApp function to use database
+const originalOpenApp = openApp;
+openApp = function(appName) {
+    originalOpenApp(appName);
+    
+    // Load app-specific data from database
+    switch(appName) {
+        case 'calculator':
+            setTimeout(setupCalculator, 100);
+            break;
+        case 'music':
+            setTimeout(setupMusicPlayer, 100);
+            break;
+        case 'terminal':
+            setTimeout(setupTerminal, 100);
+            break;
+        case 'finder':
+            setTimeout(setupFinder, 100);
+            break;
+    }
+    
+    // Add to running apps in database
+    macOSDatabase.addRunningApp(appName);
+};
+
+// Update window controls to remove from database when closed
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('window-control') && 
+        e.target.classList.contains('close')) {
+        const windowElement = e.target.closest('.app-window');
+        if (windowElement) {
+            const appName = windowElement.id.replace('Window', '');
+            macOSDatabase.removeRunningApp(appName);
+        }
+    }
+});
+
+// ========== INITIALIZE ON LOAD ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔗 Initializing database integration...');
+    
+    // Load system settings
+    setTimeout(loadSystemSettings, 500);
+    
+    // Load notifications
+    setTimeout(loadNotificationsFromDatabase, 1000);
+    
+    // Show database status notification
+    setTimeout(() => {
+        macOSDatabase.addNotification('Database Connected', 'All app data will be saved locally in your browser', 'success', 'fas fa-database');
+    }, 1500);
+    
+    console.log('✅ Database integration complete!');
+});
