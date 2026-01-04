@@ -124,28 +124,202 @@
     <!-- Desktop -->
     <div id="desktop" class="screen">
         <!-- Menu Bar -->
-        <div class="menu-bar">
-            <div class="apple-menu">
-                <span></span>
+<div class="menu-bar">
+    <!-- Apple Menu -->
+    <div class="apple-menu" id="appleMenu">
+        <span></span>
+        <div class="apple-dropdown" id="appleDropdown">
+            <div class="dropdown-item" data-action="about">
+                <span>About This Mac</span>
             </div>
-            <div class="menu-items">
-                <span class="menu-item">Finder</span>
-                <span class="menu-item">File</span>
-                <span class="menu-item">Edit</span>
-                <span class="menu-item">View</span>
-                <span class="menu-item">Window</span>
-                <span class="menu-item">Help</span>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" data-action="preferences">
+                <span>System Preferences...</span>
+                <span class="shortcut">⌘,</span>
             </div>
-            <div class="menu-right">
-                <div class="status-icons">
-                    <i class="fas fa-wifi"></i>
-                    <i class="fas fa-battery-three-quarters"></i>
-                    <i class="fas fa-search" id="spotlightBtn"></i>
-                    <i class="fas fa-lock" id="desktopLockBtn" title="Lock Screen (Cmd+L)"></i>
-                    <span id="desktopTime">00:00</span>
+            <div class="dropdown-item" data-action="app-store">
+                <span>App Store...</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" data-action="recent">
+                <span>Recent Items</span>
+                <span class="arrow">›</span>
+                <div class="submenu">
+                    <div class="submenu-item">Applications</div>
+                    <div class="submenu-item">Documents</div>
+                    <div class="submenu-item">Servers</div>
+                    <div class="submenu-divider"></div>
+                    <div class="submenu-item">Clear Menu</div>
                 </div>
             </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" data-action="force-quit">
+                <span>Force Quit...</span>
+                <span class="shortcut">⌥⌘⎋</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" data-action="sleep">
+                <span>Sleep</span>
+            </div>
+            <div class="dropdown-item" data-action="restart">
+                <span>Restart...</span>
+            </div>
+            <div class="dropdown-item" data-action="shutdown">
+                <span>Shut Down...</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" data-action="lock">
+                <span>Lock Screen</span>
+                <span class="shortcut">⌃⌘Q</span>
+            </div>
+            <div class="dropdown-item" data-action="logout">
+                <span>Log Out Neel Patel...</span>
+                <span class="shortcut">⇧⌘Q</span>
+            </div>
         </div>
+    </div>
+    
+    <!-- App Menus -->
+    <div class="menu-items" id="menuItems">
+        <!-- Finder Menu (Active when Finder is open) -->
+        <div class="app-menu active" data-app="finder">
+            <span class="menu-item" data-menu="finder">Finder</span>
+            <div class="dropdown">
+                <div class="dropdown-item" data-action="about-finder">About Finder</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="preferences-finder">Preferences... <span class="shortcut">⌘,</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="empty-trash">Empty Trash...</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="hide-finder">Hide Finder <span class="shortcut">⌘H</span></div>
+                <div class="dropdown-item" data-action="hide-others">Hide Others <span class="shortcut">⌥⌘H</span></div>
+                <div class="dropdown-item" data-action="show-all">Show All</div>
+            </div>
+        </div>
+        
+        <!-- File Menu -->
+        <div class="app-menu" data-app="file">
+            <span class="menu-item" data-menu="file">File</span>
+            <div class="dropdown">
+                <div class="dropdown-item" data-action="new-finder-window">
+                    New Finder Window <span class="shortcut">⌘N</span>
+                </div>
+                <div class="dropdown-item" data-action="new-folder">
+                    New Folder <span class="shortcut">⇧⌘N</span>
+                </div>
+                <div class="dropdown-item" data-action="new-smart-folder">
+                    New Smart Folder <span class="shortcut">⌥⌘N</span>
+                </div>
+                <div class="dropdown-item" data-action="new-tab">
+                    New Tab <span class="shortcut">⌘T</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="open">Open <span class="shortcut">⌘O</span></div>
+                <div class="dropdown-item" data-action="open-with">Open With <span class="arrow">›</span></div>
+                <div class="dropdown-item" data-action="close-window">Close Window <span class="shortcut">⌘W</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="get-info">Get Info <span class="shortcut">⌘I</span></div>
+                <div class="dropdown-item" data-action="rename">Rename</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="compress">Compress</div>
+                <div class="dropdown-item" data-action="duplicate">Duplicate <span class="shortcut">⌘D</span></div>
+                <div class="dropdown-item" data-action="make-alias">Make Alias <span class="shortcut">⌘L</span></div>
+                <div class="dropdown-item" data-action="quick-look">Quick Look <span class="shortcut">⌘Y</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="show-original">Show Original <span class="shortcut">⌘R</span></div>
+                <div class="dropdown-item" data-action="add-to-dock">Add to Dock</div>
+            </div>
+        </div>
+        
+        <!-- Edit Menu -->
+        <div class="app-menu" data-app="edit">
+            <span class="menu-item" data-menu="edit">Edit</span>
+            <div class="dropdown">
+                <div class="dropdown-item" data-action="undo">Undo <span class="shortcut">⌘Z</span></div>
+                <div class="dropdown-item" data-action="redo">Redo <span class="shortcut">⇧⌘Z</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="cut">Cut <span class="shortcut">⌘X</span></div>
+                <div class="dropdown-item" data-action="copy">Copy <span class="shortcut">⌘C</span></div>
+                <div class="dropdown-item" data-action="paste">Paste <span class="shortcut">⌘V</span></div>
+                <div class="dropdown-item" data-action="select-all">Select All <span class="shortcut">⌘A</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="show-clipboard">Show Clipboard</div>
+                <div class="dropdown-item" data-action="start-dictation">Start Dictation</div>
+                <div class="dropdown-item" data-action="emoji">Emoji & Symbols <span class="shortcut">⌃⌘Space</span></div>
+            </div>
+        </div>
+        
+        <!-- View Menu -->
+        <div class="app-menu" data-app="view">
+            <span class="menu-item" data-menu="view">View</span>
+            <div class="dropdown">
+                <div class="dropdown-item" data-action="as-icons">
+                    <span class="check">✓</span> as Icons
+                </div>
+                <div class="dropdown-item" data-action="as-list">as List <span class="shortcut">⌘2</span></div>
+                <div class="dropdown-item" data-action="as-columns">as Columns <span class="shortcut">⌘3</span></div>
+                <div class="dropdown-item" data-action="as-gallery">as Gallery <span class="shortcut">⌘4</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="use-stacks">Use Stacks <span class="shortcut">⌃⌘0</span></div>
+                <div class="dropdown-item" data-action="sort-by">Sort By <span class="arrow">›</span></div>
+                <div class="dropdown-item" data-action="clean-up">Clean Up</div>
+                <div class="dropdown-item" data-action="clean-up-by">Clean Up By <span class="arrow">›</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="hide-sidebar">Hide Sidebar <span class="shortcut">⌥⌘S</span></div>
+                <div class="dropdown-item" data-action="show-preview">Show Preview <span class="shortcut">⇧⌘P</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="hide-toolbar">Hide Toolbar <span class="shortcut">⌥⌘T</span></div>
+                <div class="dropdown-item" data-action="show-all-tabs">Show All Tabs <span class="shortcut">⇧⌘\</span></div>
+                <div class="dropdown-item" data-action="show-tab-bar">Show Tab Bar <span class="shortcut">⇧⌘T</span></div>
+                <div class="dropdown-item" data-action="show-path-bar">Show Path Bar <span class="shortcut">⌥⌘P</span></div>
+                <div class="dropdown-item" data-action="show-status-bar">Show Status Bar <span class="shortcut">⌘/</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="enter-full-screen">Enter Full Screen <span class="shortcut">⌃⌘F</span></div>
+            </div>
+        </div>
+        
+        <!-- Window Menu -->
+        <div class="app-menu" data-app="window">
+            <span class="menu-item" data-menu="window">Window</span>
+            <div class="dropdown">
+                <div class="dropdown-item" data-action="minimize">Minimize <span class="shortcut">⌘M</span></div>
+                <div class="dropdown-item" data-action="zoom">Zoom</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="cycle-through-windows">Cycle Through Windows <span class="shortcut">⌘`</span></div>
+                <div class="dropdown-item" data-action="show-previous-tab">Show Previous Tab <span class="shortcut">⌃⇧⇥</span></div>
+                <div class="dropdown-item" data-action="show-next-tab">Show Next Tab <span class="shortcut">⌃⇥</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="bring-all-to-front">Bring All to Front</div>
+                <div class="dropdown-item disabled" data-action="window-name">[Window Name Placeholder]</div>
+            </div>
+        </div>
+        
+        <!-- Help Menu -->
+        <div class="app-menu" data-app="help">
+            <span class="menu-item" data-menu="help">Help</span>
+            <div class="dropdown">
+                <div class="dropdown-item" data-action="help-finder">macOS Web Help</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="send-feedback">Send Feedback...</div>
+                <div class="dropdown-item" data-action="report-bug">Report a Bug</div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" data-action="keyboard-shortcuts">Keyboard Shortcuts...</div>
+                <div class="dropdown-item" data-action="visit-website">Visit Website</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Side Status -->
+    <div class="menu-right">
+        <div class="status-icons">
+            <i class="fas fa-wifi" id="wifiStatus" title="Wi-Fi: Connected"></i>
+            <i class="fas fa-battery-three-quarters" id="batteryStatus" title="Battery: 75%"></i>
+            <i class="fas fa-search" id="spotlightBtn" title="Spotlight Search"></i>
+            <i class="fas fa-lock" id="desktopLockBtn" title="Lock Screen (⌃⌘Q)"></i>
+            <span id="desktopTime" title="Click for Date & Time">00:00</span>
+        </div>
+    </div>
+</div>
 
         <!-- Desktop Icons -->
         <div class="desktop-icons">
@@ -531,6 +705,7 @@
 <script src="js/script.js"></script>
 <script src="js/apps.js"></script>
 <script src="js/utilities.js"></script>
-<script src="js/init.js"></script>  <!-- LAST -->  
+<script src="js/init.js"></script>  
+<script src="js/menu.js"></script>
 </body>
 </html>
